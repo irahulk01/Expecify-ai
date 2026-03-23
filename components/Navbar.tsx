@@ -17,7 +17,7 @@ export default async function Navbar() {
               <Wallet className="w-5 h-5" />
             </div>
             <span className="text-text-primary font-bold text-lg tracking-tight">
-              Expensify AI
+              monityai.com
             </span>
           </Link>
           {/* Desktop Menu */}

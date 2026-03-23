@@ -191,7 +191,7 @@ export default function OnboardingPage() {
         <div className="w-11 h-11 bg-linear-to-br from-primary via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30">
           <Wallet className="w-5 h-5 text-white" />
         </div>
-        <span className="text-white font-bold text-2xl tracking-tight">Expensify AI</span>
+        <span className="text-white font-bold text-2xl tracking-tight">monityai.com</span>
       </div>
 
       {/* Chat container */}

@@ -33,7 +33,7 @@ export default function Sidebar({ user }: { user: any }) {
           E
         </div>
         <div>
-          <h1 className="text-lg font-black text-text-primary tracking-tight leading-none">Expensify AI</h1>
+          <h1 className="text-lg font-black text-text-primary tracking-tight leading-none">monityai.com</h1>
           <p className="text-[10px] text-text-secondary font-bold uppercase tracking-widest mt-0.5">Your money, smarter</p>
         </div>
       </div>

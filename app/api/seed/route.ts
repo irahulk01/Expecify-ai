@@ -13,9 +13,9 @@ export async function GET() {
     const hashedPw = await hash("password123", 12);
 
     const user = await prisma.user.upsert({
-      where: { email: "demo@expensify.ai" },
+      where: { email: "demo@monityai.com" },
       update: {},
-      create: { email: "demo@expensify.ai", password: hashedPw, name: "John" },
+      create: { email: "demo@monityai.com", password: hashedPw, name: "John" },
     });
 
     // Only seed transactions if there are none yet

@@ -218,7 +218,7 @@ export default function Register() {
               <Wallet className="w-6 h-6 z-10" />
             </motion.div>
             <span className="text-white font-bold text-3xl tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white to-slate-400">
-              Expensify AI
+              monityai.com
             </span>
           </Link>
 
@@ -233,7 +233,7 @@ export default function Register() {
                 Create your account
               </h2>
               <p className="text-slate-400 text-sm">
-                Join Expensify AI — your smart finance companion.
+                Join monityai.com — your smart finance companion.
               </p>
             </div>
 

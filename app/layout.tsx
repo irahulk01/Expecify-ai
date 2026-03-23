@@ -9,7 +9,7 @@ const splineSans = Spline_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Expensify AI - Effortless Expense Tracking",
+  title: "monityai.com - Effortless Expense Tracking",
   description: "The smartest way to track expenses. Powered by AI, designed for humans.",
 };
 

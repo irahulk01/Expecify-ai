@@ -50,7 +50,7 @@ export default function AIAssistant() {
     {
       id: "init",
       role: "assistant",
-      content: "Hi! I'm your **Expensify AI**. Try saying **'Lunch 150'** or **'Chicken rice 120'**. I'll auto-track everything for you. How can I help today?",
+      content: "Hi! I'm your **monityai.com**. Try saying **'Lunch 150'** or **'Chicken rice 120'**. I'll auto-track everything for you. How can I help today?",
       timestamp: new Date(),
     },
   ]);
@@ -380,7 +380,7 @@ export default function AIAssistant() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-white text-sm leading-none">Expensify AI</h2>
+            <h2 className="font-bold text-white text-sm leading-none">monityai.com</h2>
             <p className="text-[11px] text-slate-500 mt-0.5">Your Personal Finance Assistant</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -555,7 +555,7 @@ export default function AIAssistant() {
             }
           }}
           readOnly={isListening}
-          placeholder={isListening ? "Listening to your voice..." : "Ask Expensify AI..."}
+          placeholder={isListening ? "Listening to your voice..." : "Ask monityai.com..."}
           rows={Math.min((input.match(/\n/g) || []).length + 1, 4)}
           className={`flex-1 border rounded-xl px-3.5 py-2.5 text-sm text-text-primary focus:outline-none transition-all resize-none scrollbar-none ${
             isListening

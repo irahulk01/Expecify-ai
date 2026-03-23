@@ -224,7 +224,7 @@ export default function Login() {
               <Wallet className="w-6 h-6 z-10" />
             </motion.div>
             <span className="text-white font-bold text-3xl tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white to-slate-400">
-              Expensify AI
+              monityai.com
             </span>
           </Link>
 

@@ -11,7 +11,7 @@ export default function Footer() {
               <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center text-white">
                 <Wallet className="w-4 h-4" />
               </div>
-              <span className="text-white font-bold text-lg">Expensify AI</span>
+              <span className="text-white font-bold text-lg">monityai.com</span>
             </div>
             <p className="text-slate-500 text-sm max-w-xs mb-6">
               The smartest way to track expenses. Powered by AI, designed for
@@ -170,7 +170,7 @@ export default function Footer() {
         </div>
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-600 text-sm">
-            © {new Date().getFullYear()} Expensify AI Inc. All rights reserved.
+            © {new Date().getFullYear()} monityai.com Inc. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link className="text-slate-600 hover:text-slate-400 text-sm" href="#">

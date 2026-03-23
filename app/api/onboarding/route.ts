@@ -4,7 +4,7 @@ import Groq from "groq-sdk";
 import { auth } from "@/auth";
 
 // The onboarding system prompt — friendly, conversational, data-collecting
-const ONBOARDING_PROMPT = `You are Expensify AI, a warm and friendly financial assistant.
+const ONBOARDING_PROMPT = `You are monityai.com, a warm and friendly financial assistant.
 You are running a 5-step onboarding flow for a new user. Ask exactly ONE question at a time and WAIT for the user's answer. Do not ask the next question until the user has answered the current one. Give a brief, encouraging acknowledgement before asking the next question.
 
 Step 1 – Income: Ask "What is your approximate monthly income or salary?"
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     // Build the first message if history is empty (welcome greeting)
     const isFirstMessage = history.length === 0 && !message;
     if (isFirstMessage) {
-      responseText = `Hey ${userName || "there"}! 👋 Welcome to **Expensify AI** — I'm so excited you're here!\n\nTo get your dashboard ready, I just need a couple of quick details. Let's start with the fun part — **what's your monthly income or salary?** (Just a rough number is totally fine!)`;
+      responseText = `Hey ${userName || "there"}! 👋 Welcome to **monityai.com** — I'm so excited you're here!\n\nTo get your dashboard ready, I just need a couple of quick details. Let's start with the fun part — **what's your monthly income or salary?** (Just a rough number is totally fine!)`;
       
       await prisma.user.update({
         where: { id: userId },

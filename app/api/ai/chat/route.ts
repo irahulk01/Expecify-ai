@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: "system",
-            content: `You are Expensify AI, a professional financial assistant. 
+            content: `You are monityai.com, a professional financial assistant. 
 Your goal is to help users manage their finances by extracting actions from natural language.
 
 User Financial Context:

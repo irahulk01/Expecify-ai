@@ -6,7 +6,7 @@ export default function Testimonials() {
       <div className="absolute inset-0 bg-linear-to-b from-background-dark to-surface-dark opacity-50"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <h2 className="text-2xl font-bold text-white mb-10 text-center">
-          People ❤️ Expensify AI
+          People ❤️ monityai.com
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Testimonial 1 */}
