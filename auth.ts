@@ -1,6 +1,8 @@
 // auth.ts — NextAuth v5 configuration
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import Apple from "next-auth/providers/apple";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
@@ -45,6 +47,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
         };
       },
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    Apple({
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET,
     }),
   ],
   callbacks: {
