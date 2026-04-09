@@ -9,6 +9,7 @@
   --color-border: var(--border);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-background-dark: var(--background-dark);
   --font-display: var(--font-spline-sans);
   
   --animate-float: float 6s ease-in-out infinite;
@@ -26,6 +27,7 @@
   --text-primary: #1F2937;
   --text-secondary: #6B7280;
   --border: #E5E7EB;
+  --background-dark: #0F172A;
   
   --ai-gradient: linear-gradient(135deg, #0D9488 0%, #059669 100%);
 }
@@ -40,6 +42,7 @@
   --text-primary: #F0FDFA;
   --text-secondary: #99F6E4;
   --border: #065F46;
+  --background-dark: #020617;
 }
 
 @keyframes float {
@@ -77,10 +80,10 @@
 
 @layer utilities {
   .glass-panel {
-    background: color-mix(in srgb, var(--surface) 70%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
   }
 
   .glass-card {
@@ -95,5 +98,18 @@
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .animate-slow-pulse {
+    animation: slow-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes slow-pulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
   }
 }
