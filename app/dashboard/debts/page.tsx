@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Landmark, Plus, CreditCard, Banknote, RefreshCw, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Landmark, Plus, CreditCard, Banknote, RefreshCw, MoreVertical, Edit2, Trash2, Search, Mic, Bell } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Debt {
@@ -91,30 +92,52 @@ export default function DebtsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background border-l border-border min-w-0 transition-colors">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-10 py-6 flex items-center justify-between border-b border-border/50">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-text-primary">Debt Management</h1>
-          <p className="text-sm font-medium text-text-secondary mt-1">Track and manage your loans, EMIs, and credit balances.</p>
+    <div className="min-h-screen bg-background md:border-l border-border min-w-0 transition-colors">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-6 md:px-10 py-6 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-border/50">
+        <div className="w-full md:flex-1 md:max-w-2xl relative group flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text" 
+              placeholder='Search debts...' 
+              className="w-full bg-surface border border-border rounded-xl py-3 pl-12 pr-12 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none shadow-sm"
+            />
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent("open-ai", { detail: { prompt: "__MIC__" } }))}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-text-secondary hover:text-primary transition-colors"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-           <button 
-             onClick={() => refetch()} 
-             className="w-10 h-10 rounded-2xl bg-surface border border-border flex items-center justify-center text-text-secondary hover:text-primary transition-all shadow-sm"
-           >
-             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
-           </button>
-           <button 
-             onClick={() => setIsAdding(!isAdding)}
-             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-2xl font-bold shadow-[0_4px_20px_-4px_rgba(168,85,247,0.4)] hover:shadow-[0_4px_25px_-2px_rgba(168,85,247,0.5)] transition-all active:scale-95"
-           >
-             <Plus className="w-4 h-4" />
-             {isAdding ? "Cancel" : "New Debt"}
-           </button>
+        
+        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button 
+              onClick={() => refetch()} 
+              className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-text-secondary hover:text-primary transition-all shadow-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+            </button>
+          </div>
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            {isAdding ? "Cancel" : "New Debt"}
+          </button>
         </div>
       </header>
 
-      <main className="p-10 max-w-6xl mx-auto space-y-8">
+      <main className="px-6 md:px-10 py-8 space-y-8 animate-fade-in-up">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-text-primary tracking-tight mb-2">Debt Management</h1>
+            <p className="text-sm text-text-secondary font-medium tracking-tight opacity-70">Track and manage your loans, EMIs, and credit balances.</p>
+          </div>
+        </div>
         
         {isAdding && (
           <div className="bg-surface border border-border rounded-3xl p-6 shadow-xl animate-in slide-in-from-top-4 fade-in duration-300">
@@ -177,13 +200,13 @@ export default function DebtsPage() {
              <p className="text-sm text-text-secondary max-w-sm mx-auto mb-6">You currently have no active loans or credit balances documented. Add one above to start tracking it.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory -mx-6 px-6 pb-6 gap-6 md:grid md:grid-cols-2 md:mx-0 md:px-0 md:pb-0">
             {debts.map(debt => {
                const paidAmount = debt.totalAmount - debt.remainingAmount;
                const progress = Math.min(100, Math.max(0, (paidAmount / debt.totalAmount) * 100));
                
                return (
-                 <div key={debt.id} className="relative bg-surface border border-border rounded-3xl p-6 hover:shadow-lg transition-all group">
+                 <div key={debt.id} className="relative bg-surface border border-border rounded-3xl p-6 hover:shadow-lg transition-all group shrink-0 w-[85%] md:w-auto snap-center">
                    <div className="flex justify-between items-start mb-6">
                      <div className="flex gap-4">
                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">

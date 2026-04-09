@@ -20,7 +20,7 @@ export default async function DashboardLayout({
       <Sidebar user={session.user} />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 min-w-0 transition-all">
+      <div className="flex-1 md:ml-64 min-w-0 transition-all pt-16 md:pt-0">
         {children}
       </div>
 

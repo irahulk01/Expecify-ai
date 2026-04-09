@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, SendHorizonal, Sparkles, Loader2, User, Bot, MicOff, AlertCircle, X, Volume2, VolumeX } from "lucide-react";
+import { Mic, SendHorizonal, Sparkles, Loader2, User, Bot, MicOff, AlertCircle, X, Volume2, VolumeX, Paperclip } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -10,6 +10,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  imageUrl?: string;
 };
 
 // ─── Speech Recognition Types ────────────────────────────────────────────────
@@ -46,20 +47,18 @@ const WAVE_HEIGHTS = [30, 70, 50, 90, 45, 80, 35, 100, 60, 75, 40, 85, 55, 95, 3
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "init",
-      role: "assistant",
-      content: "Hi! I'm your **monityai.com**. Try saying **'Lunch 150'** or **'Chicken rice 120'**. I'll auto-track everything for you. How can I help today?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState("");
+  const [mounted, setMounted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isSoundOn, setIsSoundOn] = useState(false);
+  const [autoAdd, setAutoAdd] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -72,6 +71,18 @@ export default function AIAssistant() {
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    setMounted(true);
+    setMessages([
+      {
+        id: "init",
+        role: "assistant",
+        content: "Hi! I'm your **monityai.com**. Try saying **'Lunch 150'** or **'Chicken rice 120'**. I'll auto-track everything for you. How can I help today?",
+        timestamp: new Date(),
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -137,14 +148,44 @@ export default function AIAssistant() {
     setIsTyping(true);
 
     try {
-      const historyForApi = messagesRef.current.slice(-10).map((m) => ({ role: m.role, content: m.content }));
+      let base64Image = null;
+      if (attachment) {
+        // Convert to base64
+        base64Image = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(attachment!);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+      }
+
+      // Add image to user message for local UI rendering if needed
+      if (base64Image) {
+        userMsg.imageUrl = base64Image;
+        setMessages(prev => prev.map(m => m.id === userMsg.id ? userMsg : m));
+      }
+
+      const historyForApi = messagesRef.current.slice(-10).map((m) => ({ 
+        role: m.role, 
+        content: m.content,
+        // Keep image out of standard history to save tokens unless it's the current message
+      }));
       historyForApi.push({ role: userMsg.role, content: userMsg.content });
 
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: historyForApi }),
+        body: JSON.stringify({ 
+          messages: historyForApi,
+          image: base64Image,
+          autoAdd
+        }),
       });
+
+      // Clear attachment after sending
+      if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+      setAttachment(null);
+      setAttachmentPreview(null);
 
       const data = await res.json();
       const reply: string = res.ok ? (data.content || data.reply) : "Sorry, I couldn't process that. Please try again.";
@@ -172,14 +213,40 @@ export default function AIAssistant() {
     const handleOpenAI = (e: Event) => {
       const customEvent = e as CustomEvent<{ prompt: string }>;
       setIsOpen(true);
-      if (customEvent.detail?.prompt) {
+      if (customEvent.detail?.prompt === "__MIC__") {
+        setTimeout(() => {
+          startRecognition();
+        }, 500);
+      } else if (customEvent.detail?.prompt) {
         setTimeout(() => {
           sendMessage(customEvent.detail.prompt);
         }, 400);
       }
     };
     window.addEventListener("open-ai", handleOpenAI);
-    return () => window.removeEventListener("open-ai", handleOpenAI);
+
+    // Global Drag & Drop Listeners
+    const handleDragOver = (e: DragEvent) => e.preventDefault();
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith("image/")) {
+          setAttachment(file);
+          setAttachmentPreview(URL.createObjectURL(file));
+          setIsOpen(true); // Auto open chat when file dropped anywhere
+        }
+      }
+    };
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+
+    return () => {
+      window.removeEventListener("open-ai", handleOpenAI);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
   }, [sendMessage]);
 
   const startRecognition = useCallback(async () => {
@@ -280,7 +347,7 @@ export default function AIAssistant() {
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="fixed bottom-6 right-6 z-50 group cursor-pointer"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] group cursor-pointer"
           style={{ width: 72, height: 72 }}
           onClick={() => setIsOpen(true)}
         >
@@ -318,7 +385,7 @@ export default function AIAssistant() {
             />
 
             {/* Traveling Particles (Bubbles) */}
-            {[...Array(8)].map((_, i) => (
+            {mounted && [...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
                 animate={{
@@ -363,7 +430,7 @@ export default function AIAssistant() {
 
   const containerClasses = isListening
     ? "fixed inset-0 z-[100] backdrop-blur-3xl bg-black/60 flex flex-col items-center justify-center p-4 md:p-12 transition-all duration-500"
-    : "fixed bottom-6 right-6 z-[100] w-[380px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] transition-all duration-500";
+    : "fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[380px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-6rem)] transition-all duration-500";
 
   return (
     <motion.div
@@ -372,7 +439,7 @@ export default function AIAssistant() {
       exit={{ opacity: 0, scale: 0.95 }}
       className={containerClasses}
     >
-      <div className={`glass-panel relative overflow-hidden flex flex-col w-full shadow-2xl border border-white/10 ${isListening ? "max-w-3xl h-full max-h-[800px] rounded-[2.5rem]" : "h-full rounded-3xl"}`}>
+      <div className={`glass-panel relative overflow-hidden flex flex-col w-full shadow-2xl border border-white/10 bg-surface/50 backdrop-blur-2xl ${isListening ? "max-w-3xl h-full max-h-[800px] rounded-[2.5rem]" : "h-full rounded-3xl"}`}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/15 rounded-bl-full pointer-events-none blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3 p-5 border-b border-border">
@@ -415,12 +482,27 @@ export default function AIAssistant() {
               }`}>
                 {msg.role === "assistant" ? <Bot className="w-3 h-3 text-white" /> : <User className={`w-3 h-3 ${msg.role === "user" ? "text-text-primary" : "text-text-primary"}`} />}
               </div>
-              <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+              <div className={`max-w-[85%] px-4 py-3 rounded-[1.25rem] text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "bg-primary text-white rounded-br-sm shadow-md"
-                  : "bg-surface border border-border text-text-primary rounded-bl-sm shadow-sm"
+                  ? "bg-gradient-to-br from-primary to-indigo-600 text-white rounded-br-sm shadow-md"
+                  : "bg-background/40 backdrop-blur-xl border border-border text-text-primary rounded-bl-sm shadow-xl"
               }`}>
-                <p dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, "<br/>") }} />
+                {msg.imageUrl && (
+                  <div className="mb-3 rounded-xl overflow-hidden border border-white/20 shadow-lg">
+                    <img src={msg.imageUrl} alt="Uploaded receipt" className="max-h-40 w-auto object-contain bg-black/10" />
+                  </div>
+                )}
+                <div
+                  className={`prose prose-sm max-w-none ${msg.role === "user" ? "prose-invert" : "dark:prose-invert prose-p:leading-relaxed prose-pre:bg-transparent prose-pre:p-0 prose-td:align-middle"}`}
+                  dangerouslySetInnerHTML={{ 
+                    __html: msg.content
+                      .replace(/\n/g, "<br/>")
+                      .replace(/<table/g, '<div class="overflow-x-auto my-3 rounded-xl border border-border shadow-sm"><table class="w-full text-left text-sm whitespace-nowrap bg-surface/50"')
+                      .replace(/<th/g, '<th class="bg-primary/5 text-primary tracking-wide px-4 py-2.5 font-bold uppercase text-xs"')
+                      .replace(/<td/g, '<td class="px-4 py-2 border-t border-border"')
+                      .replace(/✅/g, '<span class="text-green-500 mr-1.5 text-lg font-bold drop-shadow-sm">✅</span>')
+                  }} 
+                />
                 <p className="text-[10px] opacity-40 mt-1 text-right">
                   {msg.timestamp.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                 </p>
@@ -524,8 +606,58 @@ export default function AIAssistant() {
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="relative z-10 flex items-center gap-2 p-3 border-t border-border bg-surface/30">
-        <button
+      <form onSubmit={handleSubmit} className="relative z-10 flex flex-col gap-2 p-3 border-t border-border bg-surface/40 backdrop-blur-md">
+        
+        {/* Attachment Preview Area */}
+        <AnimatePresence>
+          {attachmentPreview && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: "auto" }} 
+              exit={{ opacity: 0, height: 0 }}
+              className="relative self-start mb-2"
+            >
+              <div className="relative group rounded-xl overflow-hidden border border-border shadow-sm">
+                <img src={attachmentPreview} alt="Attached" className="max-h-24 w-auto object-contain bg-black/5" />
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setAttachment(null);
+                    setAttachmentPreview(null);
+                  }}
+                  className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-black text-white rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && file.type.startsWith("image/")) {
+                setAttachment(file);
+                setAttachmentPreview(URL.createObjectURL(file));
+              }
+            }} 
+            accept="image/*" 
+            className="hidden" 
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isTyping || isListening}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 bg-background border border-border hover:bg-surface disabled:opacity-30"
+          >
+            <Paperclip className="w-4 h-4 text-text-secondary" />
+          </button>
+
+          <button
           type="button"
           onClick={handleMicClick}
           disabled={isTyping}
@@ -573,6 +705,20 @@ export default function AIAssistant() {
             ? <Loader2 className="w-4 h-4 text-white animate-spin" />
             : <SendHorizonal className="w-4 h-4 text-white" />}
         </button>
+        </div>
+        
+        {/* Auto Add Toggle */}
+        <div className="flex items-center gap-2 pl-1 pt-1 opacity-70 hover:opacity-100 transition-opacity">
+          <label className="flex items-center gap-2 text-[10px] text-text-primary cursor-pointer uppercase tracking-wider font-bold">
+            <input 
+              type="checkbox" 
+              checked={autoAdd} 
+              onChange={(e) => setAutoAdd(e.target.checked)} 
+              className="w-3.5 h-3.5 rounded border-border bg-surface text-primary focus:ring-primary shadow-sm"
+            />
+            Auto-Log Receipts
+          </label>
+        </div>
       </form>
       </div>
     </motion.div>

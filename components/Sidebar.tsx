@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -9,7 +11,9 @@ import {
   Target, 
   BarChart3,
   Landmark,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -24,11 +28,37 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ user }: { user: any }) {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-background border-r border-border py-8 flex flex-col z-50 transition-colors">
-      {/* Brand */}
-      <div className="px-8 mb-12 flex items-center gap-3">
+    <>
+      {/* Mobile Hamburger */}
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-surface border border-border rounded-xl shadow-sm text-text-primary"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed left-0 top-0 bottom-0 w-64 bg-background border-r border-border py-8 flex flex-col z-50 transition-transform duration-300 md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {/* Mobile Close Button */}
+        <button 
+          onClick={() => setIsOpen(false)}
+          className="md:hidden absolute top-4 right-4 p-2 text-text-secondary hover:text-text-primary"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Brand */}
+        <div className="px-8 mt-4 md:mt-0 mb-12 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20">
           E
         </div>
@@ -80,5 +110,6 @@ export default function Sidebar({ user }: { user: any }) {
         </div>
       </div>
     </aside>
+    </>
   );
 }
