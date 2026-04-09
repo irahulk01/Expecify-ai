@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, image, autoAdd } = await req.json();
     const message = messages[messages.length - 1].content;
 
     const apiKey = process.env.GROQ_API_KEY;
@@ -54,6 +54,25 @@ export async function POST(req: NextRequest) {
         `[Debt ID: ${d.id}] ${d.title} (${d.category}): Total ₹${d.totalAmount}, Remaining ₹${d.remainingAmount}`
       ).join("\n") || "No active debts.";
 
+      const groqMessages = messages.filter((m: any) => m.role === "user" || m.role === "assistant").map((m: any, index: number, arr: any[]) => {
+        if (index === arr.length - 1 && image && m.role === "user") {
+          return {
+            role: m.role,
+            content: [
+              { type: "text", text: m.content || "Extract items from this receipt/checkout screenshot." },
+              { type: "image_url", image_url: { url: image } }
+            ]
+          };
+        }
+        return m;
+      });
+
+      const modelToUse = image ? "llama-3.2-90b-vision-preview" : "llama-3.1-8b-instant";
+
+      const autoAddInstruction = autoAdd !== false
+        ? "- CRITICAL: Auto-Add is ON. You MUST immediately extract the items, display the table, and append the JSON block 'info={...}' to log the transaction."
+        : "- CRITICAL: Auto-Add is OFF. DO NOT append the JSON block to log the transaction yet. Display the Markdown table, show the total, and ask the user 'Would you like me to log this expense?'.";
+
       const completion = await groq.chat.completions.create({
         messages: [
           {
@@ -71,7 +90,15 @@ ${txContext}
 
 DIAGNOSTIC & LOGGING:
 - If a user mentions a number without context (e.g., "55000"), look at the history. If you just asked about a debt or expense, assume it's for that.
-- If context is completely missing, ask the user: "What is this ₹55,000 for? (e.g., Expense, Goal, or Debt payment?)"
+- If context is completely missing, ask the user: "What is this ₹55,000 for..."
+- If the user provides an IMAGE (receipt, screenshot, checkout cart), DO NOT ask for more context. Extract the items and the total price.
+- If the text just says "checkout", look at the total amount in the image.
+${autoAddInstruction}
+
+FORMATTING RULES (CRITICAL):
+- If the user provides a receipt or an image of items, ALWAYS output a beautiful Markdown table summarizing the items (e.g. | Item | Price |) before logging the transaction.
+- Use emojis generously (🛒, 💸, 🧾, ✨) to make your response engaging and visually appealing.
+- Be concise but friendly and professional.
 
 CAPABILITIES & JSON ACTIONS:
 To perform an action, you MUST append a JSON block 'info={...}' at the very end of your message.
@@ -82,7 +109,7 @@ To perform an action, you MUST append a JSON block 'info={...}' at the very end 
 4. **Record Debt Payment**: info={"action":"update_debt_payment","id":"debt_id_here","paymentAmount":123.0}
 5. **Update Account Balance**: info={"action":"update_account_balance","name":"Account Name","balance":123.0} (Use this for "Update my balance to..." or "Set my cash balance to...")
 6. **Add Savings Goal**: info={"action":"add_goal","title":"...","targetAmount":1000,"currentAmount":0}
-7. **Override Dashboard Metric**: info={"action":"override_metric","metric":"balance|income|spent|debt|savings","value":5000} (CRITICAL: If the user says "update total spent to 5000", "update monthly income to 100", or explicitly uses the word "update" for a dashboard metric, YOU MUST use this override_metric action to replace the value, NEVER add_transaction).
+7. **Override Dashboard Metric**: info={"action":"override_metric","metric":"balance|income|spent|debt|savings","value":5000}
 
 CRITICAL RULES:
 - ALWAYS extract amounts as numbers. Do NOT include commas in the JSON numbers.
@@ -90,9 +117,9 @@ CRITICAL RULES:
 - If you are unsure, do NOT guess. Ask for clarification.
 - Never output more than one info block.`
           },
-          ...messages.filter((m: any) => m.role === "user" || m.role === "assistant")
+          ...groqMessages
         ],
-        model: "llama-3.1-8b-instant",
+        model: modelToUse,
       });
 
       responseText = completion.choices[0].message.content || "";
