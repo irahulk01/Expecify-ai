@@ -4,8 +4,19 @@ import { compare } from "bcryptjs";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
-  const email = searchParams.get("email") || "irahulkv@gmail.com";
-  const password = searchParams.get("password") || "123456";
+  const email = searchParams.get("email");
+  const password = searchParams.get("password");
+
+  if (!email || !password) {
+    return NextResponse.json(
+      {
+        success: false,
+        reason: "MISSING_CREDENTIALS",
+        message: "Email and password query parameters are required. Example: /api/auth/debug?email=user@example.com&password=yourpassword",
+      },
+      { status: 400 }
+    );
+  }
 
   return handleDebugCheck(email, password);
 }
@@ -13,8 +24,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const email = body.email || "irahulkv@gmail.com";
-    const password = body.password || "123456";
+    const { email, password } = body;
+
+    if (!email || !password) {
+      return NextResponse.json(
+        {
+          success: false,
+          reason: "MISSING_CREDENTIALS",
+          message: "Email and password fields are required in JSON body.",
+        },
+        { status: 400 }
+      );
+    }
 
     return handleDebugCheck(email, password);
   } catch (err: any) {
