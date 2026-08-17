@@ -18,12 +18,19 @@ const providers: Provider[] = [
       if (!credentials?.email || !credentials?.password) return null;
 
       try {
-        const cleanEmail = (credentials.email as string).trim();
-        console.log(`[AUTH] Attempting login for: ${cleanEmail}`);
+        const rawEmail = (credentials.email as string).trim();
+        const cleanEmail = rawEmail.toLowerCase();
+        console.log(`[AUTH] Attempting login for: ${rawEmail}`);
 
-        const user = await prisma.user.findUnique({
-          where: { email: cleanEmail },
+        let user = await prisma.user.findUnique({
+          where: { email: rawEmail },
         });
+
+        if (!user) {
+          user = await prisma.user.findFirst({
+            where: { email: { equals: cleanEmail, mode: "insensitive" } },
+          });
+        }
 
         if (!user) {
           console.warn(`[AUTH_FAILED] User not found in DB: ${cleanEmail}`);

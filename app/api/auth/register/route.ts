@@ -20,7 +20,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+
+    const existingEmail = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: "insensitive" } },
+    });
     if (existingEmail) {
       return NextResponse.json(
         { error: "An account with this email already exists. Please login." },
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingPhone = await prisma.user.findUnique({ where: { phone } });
+    const existingPhone = await prisma.user.findUnique({ where: { phone: cleanPhone } });
     if (existingPhone) {
       return NextResponse.json(
         { error: "An account with this phone number already exists." },
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hash(password, 12);
 
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name, phone },
+      data: { email: cleanEmail, password: hashedPassword, name, phone: cleanPhone },
       select: { id: true, email: true, name: true, createdAt: true },
     });
 
