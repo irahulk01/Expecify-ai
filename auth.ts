@@ -25,15 +25,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: credentials.email as string },
         });
 
-        if (!user) {
-          console.log(`Auth Failed: User not found - ${credentials.email}`);
-          return null;
+        if (!user || !user.password) {
+          throw new Error("Invalid credentials or user uses OAuth.");
         }
 
-        const isValid = await compare(
-          credentials.password as string,
-          user.password
-        );
+        const isValid = await compare(credentials.password as string, user.password);
 
         if (!isValid) {
           console.log(`Auth Failed: Invalid password for - ${credentials.email}`);

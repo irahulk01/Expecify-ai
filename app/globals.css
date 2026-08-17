@@ -1,65 +1,105 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: var(--primary);
-  --color-secondary: var(--secondary);
+  --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
+  --color-brand-dark: var(--brand-dark);
+
   --color-success: var(--success);
   --color-error: var(--error);
+
   --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-background-dark: var(--background-dark);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--foreground-muted);
+  --color-text-brand: var(--brand);
+
+  --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
+
   --font-display: var(--font-spline-sans);
-  
+
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float 7s ease-in-out infinite 1s;
   --animate-float-slow: float 8s ease-in-out infinite 2s;
+  --animate-blob: blob 10s infinite;
 }
 
 :root {
-  --background: #F8FAFB;
-  --surface: #FFFFFF;
-  --primary: #0D9488;
-  --secondary: #0F766E;
-  --success: #10B981;
-  --error: #EF4444;
-  --text-primary: #1F2937;
-  --text-secondary: #6B7280;
-  --border: #E5E7EB;
-  --background-dark: #0F172A;
-  
-  --ai-gradient: linear-gradient(135deg, #0D9488 0%, #059669 100%);
+  /* Orbix Theme - Light Mode Defaults */
+  --brand: #7952e3; /* Main Purple */
+  --brand-light: #9b7bf6; /* Lighter Purple */
+  --brand-dark: #5b31d0; /* Darker Purple */
+
+  --success: #22c55e;
+  --error: #ef4444;
+
+  --background: #ffffff;
+  --background-alt: #f8f9fa; /* Very soft off-white/gray */
+
+  --surface: #ffffff;
+  --surface-hover: #f3f4f6;
+  --border: #e5e7eb;
+
+  --foreground: #111827;
+  --foreground-muted: #6b7280;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-brand: #7952e3;
+
+  /* Shared Gradients */
+  --brand-gradient: linear-gradient(135deg, #9b7bf6 0%, #7952e3 100%);
+  --brand-glow: linear-gradient(135deg, rgba(121, 82, 227, 0.15) 0%, rgba(121, 82, 227, 0.05) 100%);
 }
 
 [class~="dark"] {
-  --background: #022C22;
-  --surface: #064E3B;
-  --primary: #10B981;
-  --secondary: #34D399;
-  --success: #059669;
-  --error: #F87171;
-  --text-primary: #F0FDFA;
-  --text-secondary: #99F6E4;
-  --border: #065F46;
-  --background-dark: #020617;
+  /* Orbix Theme - Dark Mode */
+  --brand: #9b7bf6;
+  --brand-light: #b49bff;
+  --brand-dark: #7952e3;
+
+  --background: #0b0f19;
+  --background-alt: #111827;
+
+  --surface: #1f2937;
+  --surface-hover: #374151;
+  --border: #374151;
+
+  --foreground: #f9fafb;
+  --foreground-muted: #9ca3af;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-brand: #9b7bf6;
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
-
-@layer base {
-  body {
-    background-color: var(--background);
-    color: var(--text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
   }
 }
 
@@ -78,6 +118,16 @@
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+}
+
 @layer utilities {
   .glass-panel {
     background: color-mix(in srgb, var(--surface) 80%, transparent);
@@ -87,9 +137,9 @@
   }
 
   .glass-card {
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    background: color-mix(in srgb, var(--brand) 5%, transparent);
     backdrop-filter: blur(8px);
-    border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand) 10%, transparent);
   }
 
   .hide-scrollbar {
@@ -102,14 +152,5 @@
 
   .perspective-1000 {
     perspective: 1000px;
-  }
-
-  .animate-slow-pulse {
-    animation: slow-pulse 4s ease-in-out infinite;
-  }
-
-  @keyframes slow-pulse {
-    0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
   }
 }

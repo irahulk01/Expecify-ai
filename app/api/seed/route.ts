@@ -24,15 +24,69 @@ export async function GET() {
 
     if (existingCount === 0) {
       const txs = [
-        { title: "March Salary", amount: 45000, type: "income", category: "Salary", date: new Date("2026-03-01") },
-        { title: "Grocery Shopping", amount: 340, type: "expense", category: "Food", date: new Date("2026-03-14") },
-        { title: "Uber Auto", amount: 200, type: "expense", category: "Transport", date: new Date("2026-03-13") },
-        { title: "Netflix", amount: 649, type: "expense", category: "Entertainment", date: new Date("2026-03-13") },
-        { title: "Café Coffee Day", amount: 220, type: "expense", category: "Food", date: new Date("2026-03-12") },
-        { title: "Electricity Bill", amount: 1200, type: "expense", category: "Utilities", date: new Date("2026-03-10") },
-        { title: "Freelance Payment", amount: 15000, type: "income", category: "Salary", date: new Date("2026-03-11") },
-        { title: "Petrol", amount: 500, type: "expense", category: "Transport", date: new Date("2026-03-08") },
-        { title: "Dinner with friends", amount: 1200, type: "expense", category: "Food", date: new Date("2026-03-07") },
+        {
+          title: "March Salary",
+          amount: 45000,
+          type: "income",
+          category: "Salary",
+          date: new Date("2026-03-01"),
+        },
+        {
+          title: "Grocery Shopping",
+          amount: 340,
+          type: "expense",
+          category: "Food",
+          date: new Date("2026-03-14"),
+        },
+        {
+          title: "Uber Auto",
+          amount: 200,
+          type: "expense",
+          category: "Transport",
+          date: new Date("2026-03-13"),
+        },
+        {
+          title: "Netflix",
+          amount: 649,
+          type: "expense",
+          category: "Entertainment",
+          date: new Date("2026-03-13"),
+        },
+        {
+          title: "Café Coffee Day",
+          amount: 220,
+          type: "expense",
+          category: "Food",
+          date: new Date("2026-03-12"),
+        },
+        {
+          title: "Electricity Bill",
+          amount: 1200,
+          type: "expense",
+          category: "Utilities",
+          date: new Date("2026-03-10"),
+        },
+        {
+          title: "Freelance Payment",
+          amount: 15000,
+          type: "income",
+          category: "Salary",
+          date: new Date("2026-03-11"),
+        },
+        {
+          title: "Petrol",
+          amount: 500,
+          type: "expense",
+          category: "Transport",
+          date: new Date("2026-03-08"),
+        },
+        {
+          title: "Dinner with friends",
+          amount: 1200,
+          type: "expense",
+          category: "Food",
+          date: new Date("2026-03-07"),
+        },
       ];
 
       for (const tx of txs) {
@@ -45,7 +99,8 @@ export async function GET() {
       success: true,
       user: { id: user.id, email: user.email, name: user.name },
       transactionsSeeded: seeded,
-      message: seeded > 0 ? `Seeded ${seeded} transactions` : "User already had transactions — skipped.",
+      message:
+        seeded > 0 ? `Seeded ${seeded} transactions` : "User already had transactions — skipped.",
     });
   } catch (err) {
     console.error("[SEED]", err);

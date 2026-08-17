@@ -1,37 +1,124 @@
-// Prisma schema — v5 stable
+// Prisma schema for MongoDB Atlas
+// Supports standard Auth.js / NextAuth models, application data, and payments.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
+// ------------------------------------------------------
+// 1. NextAuth Core Models (Required for Google Sign-in)
+// ------------------------------------------------------
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ------------------------------------------------------
+// 2. Application User Model
+// ------------------------------------------------------
+
 model User {
-  id                  String        @id @default(cuid())
-  email               String        @unique
-  password            String
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
   name                String?
-  phone               String?       @unique
-  onboardingCompleted Boolean       @default(false)
+  email               String?   @unique
+  emailVerified       DateTime?
+  image               String?
+  password            String?   // Optional for OAuth-only users
+  phone               String?   @unique
+  
+  onboardingCompleted Boolean   @default(false)
   onboardingState     String?
   salaryDate          String?
-  goal                String?       @default("0")
-  createdAt           DateTime      @default(now())
-  
-  transactions   Transaction[]
-  budgets        Budget[]
-  goals          Goal[]
-  bills          Bill[]
-  accounts       Account[]
-  debts          Debt[]
+  goal                String?   @default("0")
+  createdAt           DateTime  @default(now())
+
+  // NextAuth Relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // Application Data Relations
+  transactions  Transaction[]
+  budgets       Budget[]
+  goals         Goal[]
+  bills         Bill[]
+  bankAccounts  BankAccount[] // Renamed from Account to avoid collision with NextAuth
+  debts         Debt[]
+  subscriptions Subscription[]
+}
+
+// ------------------------------------------------------
+// 3. Application Data Models
+// ------------------------------------------------------
+
+model BankAccount {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   // "UPI (Primary)" | "Amex Gold" | "Cash"
+  type      String   // "Bank" | "Credit" | "Wallet"
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Transaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  amount    Float
+  type      String   // "income" | "expense"
+  category  String
+  date      DateTime @default(now())
+  note      String?
+  accountId String?  @db.ObjectId // Linked BankAccount
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, date])
 }
 
 model Debt {
-  id              String   @id @default(cuid())
-  userId          String
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title           String
   category        String   // "Loan" | "EMI" | "Credit Card"
@@ -42,26 +129,9 @@ model Debt {
   @@index([userId])
 }
 
-model Transaction {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  amount    Float
-  type      String   // "income" | "expense"
-  category  String
-  date      DateTime @default(now())
-  note      String?
-  accountId String?  // Linked payment method
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([userId, date])
-}
-
 model Bill {
-  id          String   @id @default(cuid())
-  userId      String
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   amount      Float
@@ -75,35 +145,23 @@ model Bill {
 }
 
 model Goal {
-  id            String   @id @default(cuid())
-  userId        String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title         String
   targetAmount  Float
   currentAmount Float    @default(0)
   deadline      DateTime?
-  icon          String?  // Lucide icon name
+  icon          String?
   category      String?
   createdAt     DateTime @default(now())
 
   @@index([userId])
 }
 
-model Account {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String   // "UPI (Primary)" | "Amex Gold" | "Cash"
-  type      String   // "Bank" | "Credit" | "Wallet"
-  balance   Float    @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
 model Budget {
-  id       String @id @default(cuid())
-  userId   String
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   category String
   limit    Float
@@ -111,4 +169,26 @@ model Budget {
   year     Int
 
   @@unique([userId, category, month, year])
+}
+
+// ------------------------------------------------------
+// 4. Payments & Subscriptions
+// ------------------------------------------------------
+
+model Subscription {
+  id                   String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String    @db.ObjectId
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 String    // "starter" | "premium" | "pro"
+  status               String    // "active" | "canceled" | "past_due" | "unpaid"
+  provider             String    // "stripe" | "razorpay"
+  providerSubscriptionId String? @unique
+  providerCustomerId   String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([userId])
 }

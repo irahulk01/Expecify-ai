@@ -52,10 +52,10 @@ graph TD
     User([User]) --> UI[Next.js Frontend / React Components]
     UI --> Auth[Auth.js Session Layer]
     Auth --> APIRoutes[Next.js API Routes]
-    
+
     APIRoutes --> AI[Groq AI Model APIs]
     APIRoutes --> Prisma[Prisma ORM]
-    
+
     Prisma --> Db[(LibSQL / Turso Database)]
     Auth -.-> Db
     AI -.-> APIRoutes
@@ -64,6 +64,7 @@ graph TD
 ## Deployment Guide
 
 ### 1. Push to GitHub
+
 1. Initialize your local Git repository if you haven't already:
    ```bash
    git init
@@ -79,7 +80,9 @@ graph TD
    ```
 
 ### 2. Deploy on Vercel
+
 Deployment with Vercel is highly streamlined for Next.js projects:
+
 1. Log in to [Vercel](https://vercel.com/) and click **Add New** -> **Project**.
 2. Continually Authorize GitHub and find the `expense-tracker` repository you just pushed.
 3. Click **Import**.

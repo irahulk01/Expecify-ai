@@ -8,7 +8,7 @@ async function debugAuth() {
 
   console.log("Checking user...");
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (!user) {
@@ -18,7 +18,7 @@ async function debugAuth() {
 
   console.log("User found. Comparing password...");
   console.log("Stored hash:", user.password);
-  
+
   const isValid = await compare(password, user.password);
   console.log("Is Valid:", isValid);
 }

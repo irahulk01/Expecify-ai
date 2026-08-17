@@ -1,0 +1,61 @@
+@reference "../../app/globals.css";
+
+.section {
+  @apply py-24 bg-background overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.header {
+  @apply mb-16;
+}
+
+.title {
+  @apply text-3xl md:text-5xl font-black text-text-primary tracking-tight mb-4;
+}
+
+.subtitle {
+  @apply text-base text-text-secondary font-medium max-w-2xl leading-relaxed;
+}
+
+.grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-8 items-center;
+}
+
+.card {
+  @apply bg-surface border border-border shadow-sm rounded-3xl p-8 flex flex-col h-full hover:shadow-lg transition-shadow;
+}
+
+.userInfo {
+  @apply flex items-center gap-4 mb-6;
+}
+
+.avatar {
+  @apply w-12 h-12 rounded-full object-cover border-2 border-brand/20;
+}
+
+.userName {
+  @apply text-sm font-black text-text-primary;
+}
+
+.userRole {
+  @apply text-xs text-text-secondary;
+}
+
+.quote {
+  @apply text-sm text-text-secondary leading-relaxed italic;
+}
+
+.videoCard {
+  @apply relative w-full h-[300px] md:h-[400px] rounded-3xl overflow-hidden shadow-xl scale-100 md:scale-105 z-10 bg-text-primary;
+}
+
+.videoImage {
+  @apply absolute inset-0 w-full h-full object-cover opacity-80;
+}
+
+.playBtn {
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all cursor-pointer;
+}

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     const debts = await debtModel.findMany({
       where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(debts);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const p = prisma as any;
     const debtModel = p.debt || p.Debt;
-    
+
     if (!debtModel) return NextResponse.json({ error: "Model missing" }, { status: 500 });
 
     const debt = await debtModel.create({
@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
         title,
         category,
         totalAmount: Number(totalAmount),
-        remainingAmount: Number(totalAmount)
-      }
+        remainingAmount: Number(totalAmount),
+      },
     });
 
     return NextResponse.json(debt);
@@ -65,22 +65,22 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
+    const id = searchParams.get("id");
+
     if (!id) {
       return NextResponse.json({ error: "Debt ID required" }, { status: 400 });
     }
 
     const p = prisma as any;
     const debtModel = p.debt || p.Debt;
-    
+
     if (!debtModel) return NextResponse.json({ error: "Model missing" }, { status: 500 });
 
     const debt = await debtModel.delete({
       where: {
         id: id,
-        userId: session.user.id
-      }
+        userId: session.user.id,
+      },
     });
 
     return NextResponse.json(debt);

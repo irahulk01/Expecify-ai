@@ -1,0 +1,73 @@
+@reference "../../app/globals.css";
+
+.footer {
+  @apply bg-surface pt-16 pb-8 border-t border-border;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.grid {
+  @apply grid grid-cols-1 md:grid-cols-12 gap-8 mb-12;
+}
+
+.brandColumn {
+  @apply md:col-span-4 lg:col-span-5;
+}
+
+.logoContainer {
+  @apply flex items-center gap-2 mb-4;
+}
+
+.logoIcon {
+  @apply w-6 h-6 bg-brand rounded-full flex items-center justify-center text-white;
+}
+
+.logoText {
+  @apply text-text-primary font-black text-lg tracking-tight;
+}
+
+.description {
+  @apply text-text-secondary text-sm max-w-xs mb-6 leading-relaxed;
+}
+
+.socialLinks {
+  @apply flex gap-4;
+}
+
+.socialIcon {
+  @apply text-text-secondary hover:text-brand transition-colors;
+}
+
+.linksColumn {
+  @apply md:col-span-2 lg:col-span-2;
+}
+
+.columnTitle {
+  @apply text-text-primary font-bold mb-4 text-sm uppercase tracking-wider;
+}
+
+.linkList {
+  @apply space-y-3;
+}
+
+.linkItem {
+  @apply text-text-secondary hover:text-brand transition-colors text-sm font-medium;
+}
+
+.bottomBar {
+  @apply border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4;
+}
+
+.copyright {
+  @apply text-text-secondary text-sm font-medium;
+}
+
+.legalLinks {
+  @apply flex gap-6;
+}
+
+.legalLink {
+  @apply text-text-secondary hover:text-brand text-sm font-medium transition-colors;
+}

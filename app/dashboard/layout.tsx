@@ -1,13 +1,9 @@
-import Sidebar from "@/components/Sidebar";
-import AIAssistant from "@/components/AIAssistant";
+import Sidebar from "@/components/layout/Sidebar";
+import AIAssistant from "@/components/ai/AIAssistant/AIAssistant";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
   if (!session?.user) {
@@ -20,9 +16,7 @@ export default async function DashboardLayout({
       <Sidebar user={session.user} />
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-64 min-w-0 transition-all pt-16 md:pt-0">
-        {children}
-      </div>
+      <div className="flex-1 md:ml-64 min-w-0 transition-all pt-16 md:pt-0">{children}</div>
 
       <AIAssistant />
     </div>

@@ -1,0 +1,51 @@
+@reference "../../app/globals.css";
+
+.section {
+  @apply py-24 bg-background-alt overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.grid {
+  @apply grid grid-cols-1 md:grid-cols-12 gap-16 items-start;
+}
+
+.leftContent {
+  @apply md:col-span-4;
+}
+
+.tagline {
+  @apply text-sm font-bold text-brand uppercase tracking-widest mb-4;
+}
+
+.title {
+  @apply text-3xl md:text-4xl font-black text-text-primary tracking-tight mb-8 leading-tight;
+}
+
+.btnSupport {
+  @apply bg-brand text-white hover:opacity-90 px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand/20;
+}
+
+.faqContainer {
+  @apply md:col-span-8 flex flex-col gap-4;
+}
+
+.faqItem {
+  @apply bg-surface border border-border rounded-2xl p-6 transition-all hover:border-brand/50 cursor-pointer;
+}
+
+.faqQuestion {
+  @apply flex justify-between items-center text-text-primary font-bold text-lg;
+}
+
+.faqAnswer {
+  @apply text-sm text-text-secondary mt-4 leading-relaxed hidden;
+}
+
+.faqIcon {
+  @apply text-text-secondary transition-transform;
+}
+
+/* For a simple pure CSS accordion toggle simulation (details/summary can be used in TSX) */

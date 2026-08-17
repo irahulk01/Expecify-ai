@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "Missing Groq API Key" }, { status: 500 });
-    
+
     const groq = new Groq({ apiKey });
 
     const transcription = await groq.audio.transcriptions.create({
@@ -22,12 +22,16 @@ export async function POST(req: NextRequest) {
       model: "whisper-large-v3",
       language: "en",
       // Giving Whisper a prompt with common brand names drastically improves recognition accuracy for them
-      prompt: "Transaction, context, expenses, India. Brands: Zepto, Zomato, Swiggy, Blinkit, Ola, Uber, Rapido, Paytm, UPI, PhonePe, Myntra, Flipkart, Amazon, Nykaa, BigBasket, MakeMyTrip.",
+      prompt:
+        "Transaction, context, expenses, India. Brands: Zepto, Zomato, Swiggy, Blinkit, Ola, Uber, Rapido, Paytm, UPI, PhonePe, Myntra, Flipkart, Amazon, Nykaa, BigBasket, MakeMyTrip.",
     });
 
     return NextResponse.json({ text: transcription.text });
   } catch (err: unknown) {
     console.error("[POST /api/ai/transcribe]", err);
-    return NextResponse.json({ error: (err as Error)?.message || "Transcription failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: (err as Error)?.message || "Transcription failed" },
+      { status: 500 }
+    );
   }
 }

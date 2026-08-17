@@ -47,14 +47,24 @@ export async function POST(req: NextRequest) {
 
     const { message, history = [], userName } = await req.json();
 
+    // Filter out error messages from history context
+    const cleanHistory = (Array.isArray(history) ? history : []).filter(
+      (h: any) =>
+        h &&
+        h.content &&
+        typeof h.content === "string" &&
+        !h.content.startsWith("**Error:") &&
+        !h.content.startsWith("Error:")
+    );
+
     const apiKey = process.env.GROQ_API_KEY;
     let responseText: string;
 
     // Build the first message if history is empty (welcome greeting)
-    const isFirstMessage = history.length === 0 && !message;
+    const isFirstMessage = cleanHistory.length === 0 && !message;
     if (isFirstMessage) {
       responseText = `Hey ${userName || "there"}! 👋 Welcome to **monityai.com** — I'm so excited you're here!\n\nTo get your dashboard ready, I just need a couple of quick details. Let's start with the fun part — **what's your monthly income or salary?** (Just a rough number is totally fine!)`;
-      
+
       await prisma.user.update({
         where: { id: userId },
         data: { onboardingState: JSON.stringify([{ role: "assistant", content: responseText }]) },
@@ -64,14 +74,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!apiKey) {
-      // Simple fallback without Gemini
-      responseText = getFallbackResponse(message, history.length);
+      // Simple fallback without Groq API key
+      responseText = getFallbackResponse(message, cleanHistory.length);
     } else {
       const groq = new Groq({ apiKey });
 
       const messages = [
         { role: "system", content: ONBOARDING_PROMPT },
-        ...history.map((h: { role: string; content: string }) => ({
+        ...cleanHistory.map((h: { role: string; content: string }) => ({
           role: h.role === "user" ? "user" : "assistant",
           content: h.content || " ",
         })),
@@ -80,84 +90,106 @@ export async function POST(req: NextRequest) {
 
       const result = await groq.chat.completions.create({
         messages: messages as Parameters<typeof groq.chat.completions.create>[0]["messages"],
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-20b",
+        max_tokens: 500,
       });
 
       responseText = result.choices[0]?.message?.content || "";
     }
 
-    // Check if Gemini signaled it's done collecting data
-    const onboardMatch = responseText.match(/ONBOARD:(\{[\s\S]+?\})\s*$/m);
-    if (onboardMatch) {
-      try {
-        const parsed = JSON.parse(onboardMatch[1]);
+    // Check if AI signaled it's done collecting data via ONBOARD JSON block
+    let onboardData: any = null;
+    const onboardMatch = responseText.match(/ONBOARD:\s*(```(?:json)?\s*)?(\{[\s\S]*?\})\s*(```)?/i);
 
-        // Save transactions to DB
-        const txsToCreate = parsed.transactions || [];
-        if (txsToCreate.length > 0) {
-          await prisma.transaction.createMany({
-            data: txsToCreate.map((t: { title: string; amount: number; type: string; category: string }) => ({
+    if (onboardMatch && onboardMatch[2]) {
+      try {
+        onboardData = JSON.parse(onboardMatch[2].trim());
+      } catch (e) {
+        console.error("[ONBOARD JSON parse error]", e, onboardMatch[2]);
+      }
+    }
+
+    const userMsgCount = cleanHistory.filter((h: any) => h.role === "user").length + (message ? 1 : 0);
+    const isCompletionText =
+      responseText.includes("dashboard ready") ||
+      responseText.includes("everything I need") ||
+      responseText.includes("ready for you");
+
+    if (onboardData || isCompletionText || userMsgCount >= 5) {
+      const parsed = onboardData || {};
+
+      // Save transactions to DB
+      const txsToCreate = parsed.transactions || [];
+      if (txsToCreate.length > 0) {
+        await prisma.transaction.createMany({
+          data: txsToCreate.map(
+            (t: { title: string; amount: number; type: string; category: string }) => ({
               userId,
-              title: t.title,
+              title: t.title || "Expense",
               amount: Number(t.amount) || 0,
               type: t.type || "expense",
               category: t.category || "Other",
               date: new Date(),
-            })),
-          });
-        }
+            })
+          ),
+        });
+      }
 
-        // Save Income
-        if (parsed.income && parsed.income.amount) {
-          await prisma.transaction.create({
-            data: {
-              userId,
-              title: parsed.income.title || "Monthly Salary",
-              amount: Number(parsed.income.amount),
-              type: "income",
-              category: "Salary",
-              date: new Date(),
-            }
-          });
-        }
-
-        // Save Investments
-        const investmentsToCreate = parsed.investments || [];
-        if (investmentsToCreate.length > 0) {
-          await prisma.transaction.createMany({
-            data: investmentsToCreate.map((i: { title: string; amount: number }) => ({
-              userId,
-              title: i.title || "Investment",
-              amount: Number(i.amount) || 0,
-              type: "expense",
-              category: "Investment",
-              date: new Date(),
-            })),
-          });
-        }
-
-        // Mark user as onboarding done + save goal
-        await prisma.user.update({
-          where: { id: userId },
-          data: { 
-            onboardingCompleted: true,
-            onboardingState: null,
-            goal: parsed.goal || "Track expenses",
+      // Save Income
+      if (parsed.income && parsed.income.amount) {
+        await prisma.transaction.create({
+          data: {
+            userId,
+            title: parsed.income.title || "Monthly Salary",
+            amount: Number(parsed.income.amount),
+            type: "income",
+            category: "Salary",
+            date: new Date(),
           },
         });
-
-        const cleanReply = responseText.replace(/ONBOARD:\{[\s\S]+?\}\s*$/m, "").trim();
-        return NextResponse.json({ reply: cleanReply, done: true });
-      } catch (e) {
-        console.error("[ONBOARD parse error]", e);
       }
+
+      // Save Investments
+      const investmentsToCreate = parsed.investments || [];
+      if (investmentsToCreate.length > 0) {
+        await prisma.transaction.createMany({
+          data: investmentsToCreate.map((i: { title: string; amount: number }) => ({
+            userId,
+            title: i.title || "Investment",
+            amount: Number(i.amount) || 0,
+            type: "expense",
+            category: "Investment",
+            date: new Date(),
+          })),
+        });
+      }
+
+      // Mark user as onboarding completed
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboardingCompleted: true,
+          onboardingState: null,
+          goal: parsed.goal || message || "Track expenses",
+        },
+      });
+
+      const cleanReply = responseText
+        .replace(/ONBOARD:\s*(```(?:json)?\s*)?\{[\s\S]*?\}\s*(```)?/gi, "")
+        .trim();
+
+      const finalReply =
+        cleanReply ||
+        "Great! I have everything I need. Let me get your dashboard ready for you! 🎉";
+
+      return NextResponse.json({ reply: finalReply, done: true });
     }
 
     // Save intermediate matching state
     const newHistory = [
-      ...history,
+      ...cleanHistory,
       { role: "user", content: message },
-      { role: "assistant", content: responseText }
+      { role: "assistant", content: responseText },
     ];
     await prisma.user.update({
       where: { id: userId },
@@ -167,9 +199,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply: responseText, done: false });
   } catch (err: unknown) {
     console.error("[POST /api/onboarding]", err);
-    return NextResponse.json({ 
-      error: (err as Error)?.message || "Service error." 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: (err as Error)?.message || "Service error.",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -190,7 +225,11 @@ function getFallbackResponse(message: string, step: number): string {
   if (step <= 7) {
     return "What is your main goal with this app?";
   }
-  
+
   const income = 50000;
-  return "Great! I have everything I need. Let me get your dashboard ready for you! 🎉\\n\\nONBOARD:{\"income\":{\"amount\":" + income + ",\"title\":\"Monthly Salary\"},\"transactions\":[{\"title\":\"Credit Card\",\"amount\":5000,\"type\":\"expense\",\"category\":\"Credit Card\"},{\"title\":\"Rent\",\"amount\":15000,\"type\":\"expense\",\"category\":\"Rent\"}],\"investments\":[{\"title\":\"Mutual Funds\",\"amount\":5000}],\"goal\":\"Save Money\"}";
+  return (
+    'Great! I have everything I need. Let me get your dashboard ready for you! 🎉\\n\\nONBOARD:{"income":{"amount":' +
+    income +
+    ',"title":"Monthly Salary"},"transactions":[{"title":"Credit Card","amount":5000,"type":"expense","category":"Credit Card"},{"title":"Rent","amount":15000,"type":"expense","category":"Rent"}],"investments":[{"title":"Mutual Funds","amount":5000}],"goal":"Save Money"}'
+  );
 }

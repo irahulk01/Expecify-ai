@@ -11,7 +11,7 @@ async function main() {
   await prisma.transaction.deleteMany();
   await prisma.bill.deleteMany();
   await prisma.goal.deleteMany();
-  await prisma.account.deleteMany();
+  await prisma.bankAccount.deleteMany();
   await prisma.budget.deleteMany();
   await prisma.user.deleteMany();
 
@@ -38,16 +38,34 @@ async function main() {
   ];
 
   for (const acc of accounts) {
-    await prisma.account.create({
+    await prisma.bankAccount.create({
       data: { ...acc, userId: user.id },
     });
   }
 
   // 🎯 Create Goals
   const goals = [
-    { title: "Goa Trip 2024", targetAmount: 50000, currentAmount: 18000, icon: "Plane", deadline: new Date("2024-06-30") },
-    { title: "Emergency Fund", targetAmount: 500000, currentAmount: 120000, icon: "Target", deadline: new Date("2024-12-31") },
-    { title: "New SUV", targetAmount: 1500000, currentAmount: 200000, icon: "Car", deadline: new Date("2025-10-15") },
+    {
+      title: "Goa Trip 2024",
+      targetAmount: 50000,
+      currentAmount: 18000,
+      icon: "Plane",
+      deadline: new Date("2024-06-30"),
+    },
+    {
+      title: "Emergency Fund",
+      targetAmount: 500000,
+      currentAmount: 120000,
+      icon: "Target",
+      deadline: new Date("2024-12-31"),
+    },
+    {
+      title: "New SUV",
+      targetAmount: 1500000,
+      currentAmount: 200000,
+      icon: "Car",
+      deadline: new Date("2025-10-15"),
+    },
   ];
 
   for (const goal of goals) {
@@ -58,10 +76,38 @@ async function main() {
 
   // 🧾 Create Bills
   const bills = [
-    { title: "SBI Home Loan EMI", amount: 45000, dueDate: new Date("2026-03-25"), category: "EMI", status: "unpaid", icon: "Home" },
-    { title: "Electricity Bill", amount: 2400, dueDate: new Date("2026-03-20"), category: "Utility", status: "unpaid", icon: "Zap" },
-    { title: "Netflix Premium", amount: 649, dueDate: new Date("2026-03-23"), category: "Subscription", status: "unpaid", icon: "Tv" },
-    { title: "Airtel Postpaid", amount: 1299, dueDate: new Date("2026-03-08"), category: "Utility", status: "paid", icon: "Phone" },
+    {
+      title: "SBI Home Loan EMI",
+      amount: 45000,
+      dueDate: new Date("2026-03-25"),
+      category: "EMI",
+      status: "unpaid",
+      icon: "Home",
+    },
+    {
+      title: "Electricity Bill",
+      amount: 2400,
+      dueDate: new Date("2026-03-20"),
+      category: "Utility",
+      status: "unpaid",
+      icon: "Zap",
+    },
+    {
+      title: "Netflix Premium",
+      amount: 649,
+      dueDate: new Date("2026-03-23"),
+      category: "Subscription",
+      status: "unpaid",
+      icon: "Tv",
+    },
+    {
+      title: "Airtel Postpaid",
+      amount: 1299,
+      dueDate: new Date("2026-03-08"),
+      category: "Utility",
+      status: "paid",
+      icon: "Phone",
+    },
   ];
 
   for (const bill of bills) {
@@ -73,7 +119,7 @@ async function main() {
   // 📊 Create Transactions for last 30 days
   const today = new Date();
   const thirtyDaysAgo = subDays(today, 30);
-  
+
   const intervals = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
 
   const categories = [
@@ -88,7 +134,7 @@ async function main() {
   for (const day of intervals) {
     // Random number of transactions per day (0 to 3)
     const txCount = Math.floor(Math.random() * 4);
-    
+
     // Monthly salary on the 1st
     if (day.getDate() === 1) {
       await prisma.transaction.create({
@@ -99,16 +145,17 @@ async function main() {
           type: "income",
           category: "Salary",
           date: day,
-        }
+        },
       });
     }
 
     for (let i = 0; i < txCount; i++) {
       const isExpense = Math.random() > 0.1; // 90% chance it's an expense
-      const possibleCats = categories.filter(c => c.type === (isExpense ? "expense" : "income"));
+      const possibleCats = categories.filter((c) => c.type === (isExpense ? "expense" : "income"));
       const cat = possibleCats[Math.floor(Math.random() * possibleCats.length)];
-      
-      const amount = Math.floor(Math.random() * (cat.amount[1] - cat.amount[0] + 1)) + cat.amount[0];
+
+      const amount =
+        Math.floor(Math.random() * (cat.amount[1] - cat.amount[0] + 1)) + cat.amount[0];
 
       await prisma.transaction.create({
         data: {
@@ -118,7 +165,7 @@ async function main() {
           type: isExpense ? "expense" : "income",
           category: cat.name,
           date: day,
-        }
+        },
       });
     }
   }
@@ -140,7 +187,7 @@ async function main() {
         userId: user.id,
         month,
         year,
-      }
+      },
     });
   }
 

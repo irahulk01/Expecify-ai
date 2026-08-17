@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
     if (type === "transaction" || type === "income" || type === "investment") {
       await prisma.transaction.update({
         where: { id, userId: session.user.id },
-        data: { title, amount: Number(amount) }
+        data: { title, amount: Number(amount) },
       });
     }
 

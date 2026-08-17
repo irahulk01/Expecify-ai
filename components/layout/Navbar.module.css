@@ -1,0 +1,33 @@
+@reference "../../app/globals.css";
+
+.navbar {
+  @apply relative z-50 w-full border-b border-border bg-background/80 backdrop-blur-md transition-colors py-2;
+}
+
+.navContainer {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.logoContainer {
+  @apply shrink-0 flex items-center gap-2 cursor-pointer;
+}
+
+.logoIcon {
+  @apply w-8 h-8 bg-brand rounded-full flex items-center justify-center text-white shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform;
+}
+
+.logoText {
+  @apply text-text-primary font-black text-xl tracking-tight;
+}
+
+.desktopMenu {
+  @apply hidden md:flex items-center gap-8;
+}
+
+.navLink {
+  @apply text-text-secondary hover:text-brand text-sm font-bold transition-colors;
+}
+
+.btnDark {
+  @apply bg-text-primary text-background hover:opacity-90 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg active:scale-95;
+}
