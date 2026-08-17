@@ -2,41 +2,114 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const email = searchParams.get("email") || "irahulkv@gmail.com";
+  const password = searchParams.get("password") || "123456";
+
+  return handleDebugCheck(email, password);
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const email = body.email || "irahulkv@gmail.com";
+    const password = body.password || "123456";
 
-    console.log("Debug Auth API: Checking", email);
+    return handleDebugCheck(email, password);
+  } catch (err: any) {
+    return NextResponse.json({ success: false, reason: "INVALID_JSON", error: err?.message }, { status: 400 });
+  }
+}
 
+async function handleDebugCheck(email: string, password: string) {
+  const targetEmail = email.trim();
+  const dbUrl = process.env.DATABASE_URL || "";
+  const dbHostMasked = dbUrl ? dbUrl.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "NOT_SET";
+
+  console.log(`[AUTH_DEBUG] Connecting to DB: ${dbHostMasked}`);
+  console.log(`[AUTH_DEBUG] Target Email: ${targetEmail}`);
+
+  try {
+    // 1. Check total users count to verify DB connection works
+    const totalUsers = await prisma.user.count();
+    console.log(`[AUTH_DEBUG] Total users in DB: ${totalUsers}`);
+
+    // 2. Find target user
     const user = await prisma.user.findUnique({
-      where: { email: email.trim() },
+      where: { email: targetEmail },
     });
 
-    if (!user || !user.password) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User not found or uses OAuth",
-        },
-        { status: 404 }
-      );
-    }
-
-    const isValid = await compare(password, user.password);
-
-    if (!isValid) {
+    if (!user) {
+      console.log(`[AUTH_DEBUG] ❌ User not found: ${targetEmail}`);
       return NextResponse.json({
         success: false,
-        reason: "INVALID_PASSWORD",
-        hashInDb: user.password.substring(0, 10) + "...",
+        dbConnected: true,
+        totalUsersInDb: totalUsers,
+        dbHostMasked,
+        userFound: false,
+        reason: "USER_NOT_FOUND",
+        message: `No user record found for email: ${targetEmail}`,
+      }, { status: 404 });
+    }
+
+    if (!user.password) {
+      console.log(`[AUTH_DEBUG] ❌ User has no password (OAuth user): ${targetEmail}`);
+      return NextResponse.json({
+        success: false,
+        dbConnected: true,
+        totalUsersInDb: totalUsers,
+        dbHostMasked,
+        userFound: true,
+        hasPassword: false,
+        reason: "NO_PASSWORD_SET",
+        message: `User exists (${user.name}) but has no password set (likely registered via Google/OAuth)`,
       });
     }
 
+    // 3. Verify bcrypt password
+    const isValid = await compare(password, user.password);
+    console.log(`[AUTH_DEBUG] Bcrypt compare result for ${targetEmail}: ${isValid}`);
+
+    if (!isValid) {
+      console.log(`[AUTH_DEBUG] ❌ Password mismatch for ${targetEmail}`);
+      return NextResponse.json({
+        success: false,
+        dbConnected: true,
+        totalUsersInDb: totalUsers,
+        dbHostMasked,
+        userFound: true,
+        hasPassword: true,
+        passwordMatch: false,
+        reason: "INVALID_PASSWORD",
+        message: "Password does not match the hashed password in the database",
+      });
+    }
+
+    console.log(`[AUTH_DEBUG] ✅ SUCCESS: User ${targetEmail} authenticated successfully!`);
     return NextResponse.json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name },
+      dbConnected: true,
+      totalUsersInDb: totalUsers,
+      dbHostMasked,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        onboardingCompleted: user.onboardingCompleted,
+      },
+      passwordMatch: true,
+      message: "Database connected and credentials authenticated successfully!",
     });
   } catch (err: any) {
-    return NextResponse.json({ success: false, reason: "ERROR", message: err.message });
+    console.error("[AUTH_DEBUG] 💥 Database/Auth error:", err);
+    return NextResponse.json({
+      success: false,
+      dbConnected: false,
+      dbHostMasked,
+      error: err?.message || String(err),
+      reason: "DB_CONNECTION_ERROR",
+      message: "Failed to connect to Prisma database",
+    }, { status: 500 });
   }
 }

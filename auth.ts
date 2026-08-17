@@ -18,30 +18,38 @@ const providers: Provider[] = [
       if (!credentials?.email || !credentials?.password) return null;
 
       try {
+        const cleanEmail = (credentials.email as string).trim();
+        console.log(`[AUTH] Attempting login for: ${cleanEmail}`);
+
         const user = await prisma.user.findUnique({
-          where: { email: (credentials.email as string).trim() },
+          where: { email: cleanEmail },
         });
 
-        if (!user || !user.password) {
-          console.log(`Auth Failed: User not found or no password - ${credentials.email}`);
+        if (!user) {
+          console.warn(`[AUTH_FAILED] User not found in DB: ${cleanEmail}`);
+          return null;
+        }
+
+        if (!user.password) {
+          console.warn(`[AUTH_FAILED] User has no password set: ${cleanEmail}`);
           return null;
         }
 
         const isValid = await compare(credentials.password as string, user.password);
 
         if (!isValid) {
-          console.log(`Auth Failed: Invalid password for - ${credentials.email}`);
+          console.warn(`[AUTH_FAILED] Password mismatch for: ${cleanEmail}`);
           return null;
         }
 
-        console.log(`Auth Success: ${user.email}`);
+        console.log(`[AUTH_SUCCESS] Logged in: ${user.email} (${user.id})`);
         return {
           id: user.id,
           email: user.email,
           name: user.name,
         };
       } catch (err) {
-        console.error("Auth Authorize Error:", err);
+        console.error("[AUTH_ERROR] Exception in authorize():", err);
         return null;
       }
     },
