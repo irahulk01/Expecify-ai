@@ -14,7 +14,7 @@ export default function AiStatusIndicator() {
       try {
         const res = await fetch("/api/ai/status");
         const data = await res.json();
-        
+
         if (data.connected) {
           setStatus("connected");
         } else {
@@ -33,9 +33,9 @@ export default function AiStatusIndicator() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end group">
-      <div 
+      <div
         className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-lg border backdrop-blur-md transition-all ${
-          status === "connected" 
+          status === "connected"
             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
             : "bg-red-500/10 border-red-500/20 text-red-400"
         }`}

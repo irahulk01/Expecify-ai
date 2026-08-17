@@ -12,11 +12,18 @@ function SimpleMarkdown({ text }: { text?: string }) {
   return (
     <span>
       {parts.map((p, i) =>
-        p.startsWith("**") && p.endsWith("**")
-          ? <strong key={i}>{p.slice(2, -2)}</strong>
-          : p.split("\n").map((line, j) => (
-              <span key={`${i}-${j}`}>{j > 0 && <br />}{line}</span>
-            ))
+        p.startsWith("**") && p.endsWith("**") ? (
+          <strong key={i} className="font-bold text-text-primary">
+            {p.slice(2, -2)}
+          </strong>
+        ) : (
+          p.split("\n").map((line, j) => (
+            <span key={`${i}-${j}`}>
+              {j > 0 && <br />}
+              {line}
+            </span>
+          ))
+        )
       )}
     </span>
   );
@@ -54,9 +61,9 @@ export default function OnboardingPage() {
         window.location.href = "/dashboard";
         return;
       }
-      
+
       setUserName(data.userName);
-      
+
       if (data.history && data.history.length > 0) {
         setMessages(data.history);
         setLoading(false);
@@ -117,22 +124,36 @@ export default function OnboardingPage() {
         }),
       });
       const data = await res.json();
-  
+
       if (data.error) {
-        setMessages((prev) => [...prev, { role: "assistant", content: `**Error:** ${data.error}` }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `**Error:** ${data.error}` },
+        ]);
         setLoading(false);
         return;
       }
-      
+
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
       setLoading(false);
-  
-      if (data.done) {
+
+      const isComplete =
+        data.done ||
+        data.reply?.toLowerCase().includes("dashboard ready") ||
+        data.reply?.toLowerCase().includes("ready for you");
+
+      if (isComplete) {
         setDone(true);
-        setTimeout(() => router.push("/dashboard"), 2500);
+        setTimeout(() => {
+          router.push("/dashboard");
+          window.location.href = "/dashboard";
+        }, 1500);
       }
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "**Error:** Failed to connect to AI server." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "**Error:** Failed to connect to AI server." },
+      ]);
       setLoading(false);
     }
   };
@@ -166,13 +187,13 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-text-primary transition-colors flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           animate={{ rotate: 360, scale: [1, 1.1, 1] }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[-10%] w-[700px] h-[700px] bg-primary/10 rounded-full blur-[160px]"
+          className="absolute top-[-10%] left-[-10%] w-[700px] h-[700px] bg-brand/10 rounded-full blur-[160px]"
         />
         <motion.div
           animate={{ rotate: -360, scale: [1, 1.2, 1] }}
@@ -182,33 +203,34 @@ export default function OnboardingPage() {
         <motion.div
           animate={{ y: [0, -30, 0] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[30%] right-[5%] w-[300px] h-[300px] bg-emerald-500/8 rounded-full blur-[120px]"
+          className="absolute top-[30%] right-[5%] w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[120px]"
         />
       </div>
 
       {/* Header */}
       <div className="relative z-10 flex items-center gap-3 mb-8">
-        <div className="w-11 h-11 bg-linear-to-br from-primary via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30">
+        <div className="w-11 h-11 bg-gradient-to-br from-brand via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand/30">
           <Wallet className="w-5 h-5 text-white" />
         </div>
-        <span className="text-white font-bold text-2xl tracking-tight">monityai.com</span>
+        <span className="text-text-primary font-bold text-2xl tracking-tight">monityai.com</span>
       </div>
 
       {/* Chat container */}
-      <div className="relative z-10 w-full max-w-2xl glass-panel rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col"
-        style={{ height: "min(600px, 80vh)" }}>
-
+      <div
+        className="relative z-10 w-full max-w-2xl bg-surface/90 backdrop-blur-xl rounded-3xl border border-border overflow-hidden shadow-2xl flex flex-col"
+        style={{ height: "min(600px, 80vh)" }}
+      >
         {/* Title bar */}
-        <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+        <div className="px-6 py-4 border-b border-border bg-surface flex items-center gap-3">
           <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-linear-to-br from-emerald-400 to-primary flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-brand flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-background-dark" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-surface" />
           </div>
           <div>
-            <p className="text-white text-sm font-semibold">Gemini AI</p>
-            <p className="text-slate-500 text-xs">Setting up your dashboard</p>
+            <p className="text-text-primary text-sm font-semibold">Gemini AI</p>
+            <p className="text-text-secondary text-xs">Setting up your dashboard</p>
           </div>
         </div>
 
@@ -224,19 +246,19 @@ export default function OnboardingPage() {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-emerald-400 to-primary flex items-center justify-center mr-2 mt-1 shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-brand flex items-center justify-center mr-2 mt-1 shrink-0">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
                 )}
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-primary text-white rounded-br-sm"
-                      : "bg-white/5 text-slate-200 border border-white/8 rounded-bl-sm"
+                      ? "bg-brand text-white font-medium rounded-br-sm shadow-sm"
+                      : "bg-background-alt text-text-primary border border-border rounded-bl-sm shadow-xs"
                   }`}
                 >
                   {msg.role === "assistant" ? (
-                    <span className="leading-relaxed">
+                    <span className="leading-relaxed text-text-primary">
                       <SimpleMarkdown text={msg.content} />
                     </span>
                   ) : (
@@ -264,10 +286,10 @@ export default function OnboardingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex items-end gap-2"
             >
-              <div className="w-7 h-7 rounded-full bg-linear-to-br from-emerald-400 to-primary flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-brand flex items-center justify-center shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
-              <div className="bg-white/5 border border-white/8 rounded-2xl rounded-bl-sm px-4 py-3 text-slate-400 text-sm min-w-[60px]">
+              <div className="bg-background-alt border border-border rounded-2xl rounded-bl-sm px-4 py-3 text-text-secondary text-sm min-w-[60px]">
                 Thinking{dots}
               </div>
             </motion.div>
@@ -278,12 +300,20 @@ export default function OnboardingPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex justify-center py-4"
+              className="flex flex-col items-center gap-3 py-4"
             >
-              <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl px-5 py-3 text-emerald-400 text-sm font-medium">
-                <ArrowRight className="w-4 h-4" />
-                Dashboard ready! Taking you there now…
+              <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl px-5 py-3 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                <ArrowRight className="w-4 h-4 animate-bounce" />
+                Dashboard ready! Redirecting you now…
               </div>
+              <button
+                onClick={() => {
+                  window.location.href = "/dashboard";
+                }}
+                className="px-6 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-xl shadow-lg shadow-brand/30 transition-all flex items-center gap-2"
+              >
+                Go to Dashboard Now <ArrowRight className="w-4 h-4" />
+              </button>
             </motion.div>
           )}
 
@@ -291,9 +321,12 @@ export default function OnboardingPage() {
         </div>
 
         {/* Input bar */}
-        <div className="px-4 py-4 border-t border-white/5">
+        <div className="px-4 py-4 border-t border-border bg-surface">
           <form
-            onSubmit={(e) => { e.preventDefault(); send(); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
             className="flex items-center gap-3"
           >
             <button
@@ -301,8 +334,8 @@ export default function OnboardingPage() {
               onClick={toggleVoice}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                 listening
-                  ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/40 animate-pulse"
-                  : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  ? "bg-red-500/20 text-red-500 ring-1 ring-red-500/40 animate-pulse"
+                  : "bg-background border border-border text-text-secondary hover:bg-surface-hover hover:text-text-primary"
               }`}
             >
               {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -323,7 +356,7 @@ export default function OnboardingPage() {
               disabled={loading || done}
               autoFocus
               rows={Math.min((input.match(/\n/g) || []).length + 1, 4)}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-40 transition-all resize-none scrollbar-none"
+              className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-text-primary text-sm placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-brand/50 disabled:opacity-40 transition-all resize-none scrollbar-none"
             />
 
             <motion.button
@@ -331,7 +364,7 @@ export default function OnboardingPage() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={!input.trim() || loading || done}
-              className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/30 shrink-0"
+              className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-brand/30 shrink-0"
             >
               <Send className="w-4 h-4" />
             </motion.button>
@@ -339,7 +372,7 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <p className="relative z-10 mt-6 text-slate-600 text-xs text-center">
+      <p className="relative z-10 mt-6 text-text-secondary text-xs text-center">
         This takes less than 2 minutes · Your data is private and secure
       </p>
     </div>

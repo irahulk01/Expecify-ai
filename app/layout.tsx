@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Spline_Sans } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 const splineSans = Spline_Sans({
   variable: "--font-spline-sans",
   subsets: ["latin"],
 });
 
-import Providers from "@/components/Providers";
-import OfflineGuard from "@/components/OfflineGuard";
+import Providers from "@/components/providers/Providers";
+import OfflineGuard from "@/components/layout/OfflineGuard";
 
 export const metadata: Metadata = {
   title: "monityai.com - Effortless Expense Tracking",

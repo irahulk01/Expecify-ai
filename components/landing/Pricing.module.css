@@ -1,0 +1,90 @@
+@reference "../../app/globals.css";
+
+.section {
+  @apply py-24 bg-background overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.header {
+  @apply text-center mb-16;
+}
+
+.title {
+  @apply text-3xl md:text-5xl font-black text-text-primary tracking-tight mb-4;
+}
+
+.subtitle {
+  @apply text-base text-text-secondary font-medium max-w-2xl mx-auto;
+}
+
+.grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-8 items-center;
+}
+
+.card {
+  @apply bg-surface border border-border rounded-3xl p-8 flex flex-col relative transition-all hover:shadow-xl hover:-translate-y-1;
+}
+
+.cardHighlighted {
+  background: var(--brand-gradient);
+  @apply border-brand text-white shadow-2xl shadow-brand/20 scale-100 md:scale-105 z-10;
+}
+
+.planName {
+  @apply text-sm font-black uppercase tracking-widest text-text-secondary mb-2;
+}
+
+.planNameHighlighted {
+  @apply text-white/80;
+}
+
+.price {
+  @apply text-5xl font-black mb-6;
+}
+
+.priceHighlighted {
+  @apply text-white;
+}
+
+.period {
+  @apply text-base font-medium;
+}
+
+.periodHighlighted {
+  @apply text-white/80;
+}
+
+.desc {
+  @apply text-sm text-text-secondary mb-8 leading-relaxed h-16;
+}
+
+.descHighlighted {
+  @apply text-white/90;
+}
+
+.featuresList {
+  @apply space-y-4 mb-8 flex-1;
+}
+
+.featureItem {
+  @apply flex items-center gap-3 text-sm font-bold text-text-primary;
+}
+
+.featureItemHighlighted {
+  @apply text-white;
+}
+
+.btn {
+  @apply w-full py-4 rounded-xl font-black text-sm transition-all text-center mt-auto;
+}
+
+.btnOutline {
+  @apply bg-surface border border-border text-text-primary hover:bg-surface-hover;
+}
+
+.btnSolid {
+  @apply bg-white text-brand hover:bg-white/90 shadow-lg shadow-white/10;
+}

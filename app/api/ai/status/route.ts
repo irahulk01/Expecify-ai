@@ -9,19 +9,22 @@ export async function GET() {
     }
 
     const groq = new Groq({ apiKey });
-    
+
     // Test the API with a tiny prompt to verify key validity
     await groq.chat.completions.create({
       messages: [{ role: "user", content: "hello" }],
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-20b",
       max_tokens: 5,
     });
-    
+
     return NextResponse.json({ connected: true }, { status: 200 });
   } catch (err: unknown) {
-    return NextResponse.json({ 
-      connected: false, 
-      error: (err as Error)?.message || "Failed to connect to Groq API." 
-    }, { status: 200 }); // Status 200 so the frontend fetch doesn't throw
+    return NextResponse.json(
+      {
+        connected: false,
+        error: (err as Error)?.message || "Failed to connect to Groq API.",
+      },
+      { status: 200 }
+    ); // Status 200 so the frontend fetch doesn't throw
   }
 }

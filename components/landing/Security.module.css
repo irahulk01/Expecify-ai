@@ -1,0 +1,57 @@
+@reference "../../app/globals.css";
+
+.section {
+  @apply py-24 bg-surface overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.header {
+  @apply text-center mb-16;
+}
+
+.title {
+  @apply text-3xl md:text-5xl font-black text-text-primary tracking-tight mb-4;
+}
+
+.subtitle {
+  @apply text-base text-text-secondary font-medium max-w-2xl mx-auto;
+}
+
+.grid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-16 items-center;
+}
+
+.featuresList {
+  @apply space-y-8;
+}
+
+.featureItem {
+  @apply flex gap-4 items-start;
+}
+
+.iconWrapper {
+  @apply w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center text-brand shrink-0;
+}
+
+.featureTitle {
+  @apply text-lg font-black text-text-primary mb-1;
+}
+
+.featureDesc {
+  @apply text-sm text-text-secondary font-medium leading-relaxed;
+}
+
+.visualContainer {
+  @apply relative w-full h-[400px] flex items-center justify-center;
+}
+
+.blob {
+  @apply absolute inset-0 bg-brand-light/30 rounded-3xl blur-[80px] mix-blend-multiply;
+}
+
+.mockupCard {
+  @apply bg-surface border border-border shadow-2xl rounded-2xl p-6 w-[90%] md:w-[80%] relative z-10;
+}

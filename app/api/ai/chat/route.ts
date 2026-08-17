@@ -23,55 +23,63 @@ export async function POST(req: NextRequest) {
     } else {
       const groq = new Groq({ apiKey });
 
-      // Fetch user data
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        include: { 
-          transactions: { orderBy: { date: "desc" }, take: 30 }
-        }
-      }) as any;
+      // Fetch user data and debts in parallel
+      const [user, debts] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: session.user.id },
+          include: {
+            transactions: { orderBy: { date: "desc" }, take: 30 },
+          },
+        }),
+        prisma.debt.findMany({
+          where: { userId: session.user.id },
+        }),
+      ]);
 
-      // Safely fetch debts
-      let debts: any[] = [];
-      const prismaAny = prisma as any;
-      if (prismaAny.debt) {
-        debts = await prismaAny.debt.findMany({
-          where: { userId: session.user.id }
-        });
-      } else if (prismaAny.Debt) { // Fallback for case sensitivity
-        debts = await prismaAny.Debt.findMany({
-          where: { userId: session.user.id }
-        });
-      }
+      const txContext =
+        user?.transactions
+          ?.map(
+            (t: any) =>
+              `[ID: ${t.id}] ${t.date.toLocaleDateString()} - ${t.title} - ${t.category} - ₹${t.amount}`
+          )
+          .join("\n") || "No recent transactions.";
 
-      const txContext = user?.transactions?.map((t: any) => 
-        `[ID: ${t.id}] ${t.date.toLocaleDateString()} - ${t.title} - ${t.category} - ₹${t.amount}`
-      ).join("\n") || "No recent transactions.";
-
-      const salaryContext = user?.salaryDate ? `Salary Date: ${user.salaryDate}` : "Salary Date: Not set.";
+      const salaryContext = user?.salaryDate
+        ? `Salary Date: ${user.salaryDate}`
+        : "Salary Date: Not set.";
       const goalContext = user?.goal ? `Financial Goal: ${user.goal}` : "Goal: Not set.";
-      const debtContext = (debts || []).map((d: any) => 
-        `[Debt ID: ${d.id}] ${d.title} (${d.category}): Total ₹${d.totalAmount}, Remaining ₹${d.remainingAmount}`
-      ).join("\n") || "No active debts.";
+      const debtContext =
+        (debts || [])
+          .map(
+            (d: any) =>
+              `[Debt ID: ${d.id}] ${d.title} (${d.category}): Total ₹${d.totalAmount}, Remaining ₹${d.remainingAmount}`
+          )
+          .join("\n") || "No active debts.";
 
-      const groqMessages = messages.filter((m: any) => m.role === "user" || m.role === "assistant").map((m: any, index: number, arr: any[]) => {
-        if (index === arr.length - 1 && image && m.role === "user") {
-          return {
-            role: m.role,
-            content: [
-              { type: "text", text: m.content || "Extract items from this receipt/checkout screenshot." },
-              { type: "image_url", image_url: { url: image } }
-            ]
-          };
-        }
-        return m;
-      });
+      const groqMessages = messages
+        .filter((m: any) => m.role === "user" || m.role === "assistant")
+        .map((m: any, index: number, arr: any[]) => {
+          if (index === arr.length - 1 && image && m.role === "user") {
+            return {
+              role: m.role,
+              content: [
+                {
+                  type: "text",
+                  text: m.content || "Extract items from this receipt/checkout screenshot.",
+                },
+                { type: "image_url", image_url: { url: image } },
+              ],
+            };
+          }
+          return m;
+        });
 
-      const modelToUse = image ? "llama-3.2-90b-vision-preview" : "llama-3.1-8b-instant";
+      const modelToUse = image ? "llama-3.2-11b-vision-preview" : "openai/gpt-oss-20b";
 
-      const autoAddInstruction = autoAdd !== false
-        ? "- CRITICAL: Auto-Add is ON. You MUST immediately extract the items, display the table, and append the JSON block 'info={...}' to log the transaction."
-        : "- CRITICAL: Auto-Add is OFF. DO NOT append the JSON block to log the transaction yet. Display the Markdown table, show the total, and ask the user 'Would you like me to log this expense?'.";
+      const autoAddInstruction =
+        autoAdd !== false
+          ? "- CRITICAL: Auto-Add is ON. You MUST immediately extract the items, display the table, and append the JSON block 'info={...}' to log the transaction."
+          : "- CRITICAL: Auto-Add is OFF. DO NOT append the JSON block to log the transaction yet. Display the Markdown table, show the total, and ask the user 'Would you like me to log this expense?'.";
 
       const completion = await groq.chat.completions.create({
         messages: [
@@ -115,9 +123,9 @@ CRITICAL RULES:
 - ALWAYS extract amounts as numbers. Do NOT include commas in the JSON numbers.
 - If you record an action, start your response with "✅".
 - If you are unsure, do NOT guess. Ask for clarification.
-- Never output more than one info block.`
+- Never output more than one info block.`,
           },
-          ...groqMessages
+          ...groqMessages,
         ],
         model: modelToUse,
       });
@@ -149,7 +157,7 @@ CRITICAL RULES:
                   amount: amount,
                   type: parsed.type,
                   category: parsed.category,
-                }
+                },
               });
               actionSuccess = true;
               actionMessage = `Logged: ${tx.title} (₹${tx.amount})`;
@@ -161,11 +169,11 @@ CRITICAL RULES:
             const params: Record<string, string> = {};
             if (parsed.salaryDate) params.salaryDate = String(parsed.salaryDate);
             if (parsed.goal) params.goal = String(parsed.goal);
-            
+
             if (Object.keys(params).length > 0) {
               await prisma.user.update({
                 where: { id: session.user.id },
-                data: params
+                data: params,
               });
               actionSuccess = true;
               actionMessage = "Profile updated";
@@ -176,19 +184,19 @@ CRITICAL RULES:
               const target = Number(parsed.targetAmount);
               const current = Number(parsed.currentAmount || 0);
               if (target > 0) {
-                 await goalModel.create({
-                    data: {
-                       userId: session.user.id,
-                       title: parsed.title || "Savings Goal",
-                       targetAmount: target,
-                       currentAmount: current
-                    }
-                 });
-                 actionSuccess = true;
-                 actionMessage = `Saved Goal: ${parsed.title} (Target: ₹${target.toLocaleString("en-IN")})`;
+                await goalModel.create({
+                  data: {
+                    userId: session.user.id,
+                    title: parsed.title || "Savings Goal",
+                    targetAmount: target,
+                    currentAmount: current,
+                  },
+                });
+                actionSuccess = true;
+                actionMessage = `Saved Goal: ${parsed.title} (Target: ₹${target.toLocaleString("en-IN")})`;
               } else {
-                 actionSuccess = false;
-                 actionMessage = "Invalid amount: Target must be greater than 0.";
+                actionSuccess = false;
+                actionMessage = "Invalid amount: Target must be greater than 0.";
               }
             }
           } else if (parsed.action === "add_debt" && debtModel) {
@@ -196,7 +204,7 @@ CRITICAL RULES:
             if (total > 0) {
               const paid = Number(parsed.paidAmount || 0);
               const remaining = Math.max(0, total - paid);
-              
+
               await debtModel.create({
                 data: {
                   userId: session.user.id,
@@ -204,7 +212,7 @@ CRITICAL RULES:
                   category: String(parsed.category || "Loan"),
                   totalAmount: total,
                   remainingAmount: remaining,
-                }
+                },
               });
               actionSuccess = true;
               actionMessage = `Saved Debt: ${parsed.title} (₹${remaining.toLocaleString("en-IN")} remaining)`;
@@ -214,18 +222,18 @@ CRITICAL RULES:
             }
           } else if (parsed.action === "update_debt_payment" && parsed.id) {
             const paymentAmount = Number(parsed.paymentAmount);
-             const debtModel = p.debt || p.Debt;
-            
+            const debtModel = p.debt || p.Debt;
+
             if (debtModel) {
               const debt = await debtModel.findUnique({
-                where: { id: parsed.id }
+                where: { id: parsed.id },
               });
 
               if (debt && paymentAmount > 0) {
                 const newAmount = Math.max(0, debt.remainingAmount - paymentAmount);
                 await debtModel.update({
                   where: { id: debt.id },
-                  data: { remainingAmount: newAmount }
+                  data: { remainingAmount: newAmount },
                 });
 
                 if (transactionModel) {
@@ -236,7 +244,7 @@ CRITICAL RULES:
                       amount: paymentAmount,
                       type: "expense",
                       category: "Debt",
-                    }
+                    },
                   });
                 }
                 actionSuccess = true;
@@ -255,28 +263,37 @@ CRITICAL RULES:
               // Better matching: if name is "primary balance" or similar, try to find "Primary" or "UPI"
               const searchName = parsed.name?.toLowerCase() || "";
               let account = null;
-              
-              const allAccounts = await accountModel.findMany({ where: { userId: session.user.id } });
-              
+
+              const allAccounts = await accountModel.findMany({
+                where: { userId: session.user.id },
+              });
+
               if (searchName) {
-                 account = allAccounts.find((a: any) => 
-                   a.name.toLowerCase().includes(searchName) || 
-                   searchName.includes(a.name.toLowerCase()) ||
-                   (searchName.includes("primary") && a.name.toLowerCase().includes("primary"))
-                 );
+                account = allAccounts.find(
+                  (a: any) =>
+                    a.name.toLowerCase().includes(searchName) ||
+                    searchName.includes(a.name.toLowerCase()) ||
+                    (searchName.includes("primary") && a.name.toLowerCase().includes("primary"))
+                );
               }
 
               if (!account) {
-                 // Fallback: pick the one with "Primary" in name, or just the first one if searching for "primary|cash|account"
-                 if (searchName.includes("primary") || searchName.includes("account") || !searchName) {
-                   account = allAccounts.find((a: any) => a.name.toLowerCase().includes("primary")) || allAccounts[0];
-                 }
+                // Fallback: pick the one with "Primary" in name, or just the first one if searching for "primary|cash|account"
+                if (
+                  searchName.includes("primary") ||
+                  searchName.includes("account") ||
+                  !searchName
+                ) {
+                  account =
+                    allAccounts.find((a: any) => a.name.toLowerCase().includes("primary")) ||
+                    allAccounts[0];
+                }
               }
 
               if (account) {
                 await accountModel.update({
                   where: { id: account.id },
-                  data: { balance: balance }
+                  data: { balance: balance },
                 });
                 actionSuccess = true;
                 actionMessage = `Updated balance for ${account.name}: ₹${balance.toLocaleString("en-IN")}`;
@@ -287,87 +304,137 @@ CRITICAL RULES:
                     userId: session.user.id,
                     name: parsed.name || "Primary Account",
                     balance: balance,
-                    type: "Bank"
-                  }
+                    type: "Bank",
+                  },
                 });
                 actionSuccess = true;
                 actionMessage = `Created account ${parsed.name || "Primary Account"} with balance ₹${balance.toLocaleString("en-IN")}`;
               }
             }
           } else if (parsed.action === "override_metric") {
-             const metric = parsed.metric;
-             const value = Number(parsed.value);
-             const uId = session.user.id;
+            const metric = parsed.metric;
+            const value = Number(parsed.value);
+            const uId = session.user.id;
 
-             if (metric === "balance" && accountModel) {
-                 const allAccounts = await accountModel.findMany({ where: { userId: uId } });
-                 const currentTotal = allAccounts.reduce((s: number, a: any) => s + a.balance, 0);
-                 const diff = value - currentTotal;
-                 if (diff !== 0) {
-                     let primary = allAccounts.find((a: any) => a.name.toLowerCase().includes("primary")) || allAccounts[0];
-                     if (primary) {
-                        await accountModel.update({ where: { id: primary.id }, data: { balance: primary.balance + diff } });
-                     } else {
-                        await accountModel.create({ data: { userId: uId, name: "Primary Balance", balance: value, type: "Bank" } });
-                     }
-                 }
-                 actionSuccess = true;
-                 actionMessage = `Total Balance overridden to ₹${value.toLocaleString("en-IN")}`;
-             } else if (metric === "income" && transactionModel) {
-                 // The dashboard calculates income/spent over a 30-day window
-                 const d = new Date();
-                 d.setDate(d.getDate() - 30);
-                 const allInc = await transactionModel.findMany({ where: { userId: uId, type: "income", date: { gte: d } } });
-                 const curInc = allInc.reduce((s: number, t: any) => s + t.amount, 0);
-                 const diff = value - curInc;
-                 if (diff !== 0) {
-                    await transactionModel.create({ data: { userId: uId, title: "Income Adjustment", amount: diff, type: "income", category: "Adjustment", date: new Date() } });
-                 }
-                 actionSuccess = true;
-                 actionMessage = `Monthly Income overridden to ₹${value.toLocaleString("en-IN")}`;
-             } else if (metric === "spent" && transactionModel) {
-                 // The dashboard calculates income/spent over a 30-day window
-                 const d = new Date();
-                 d.setDate(d.getDate() - 30);
-                 const allExp = await transactionModel.findMany({ where: { userId: uId, type: "expense", date: { gte: d } } });
-                 const curExp = allExp.reduce((s: number, t: any) => s + t.amount, 0);
-                 const diff = value - curExp;
-                 if (diff !== 0) {
-                    await transactionModel.create({ data: { userId: uId, title: "Expense Adjustment", amount: diff, type: "expense", category: "Adjustment", date: new Date() } });
-                 }
-                 actionSuccess = true;
-                 actionMessage = `Total Spent overridden to ₹${value.toLocaleString("en-IN")}`;
-             } else if (metric === "debt" && p.debt) {
-                 const dModel = p.debt || p.Debt;
-                 const allDebts = await dModel.findMany({ where: { userId: uId } });
-                 const curDebt = allDebts.reduce((s: number, d: any) => s + d.remainingAmount, 0);
-                 const diff = value - curDebt;
-                 if (diff !== 0) {
-                     if (allDebts.length > 0) {
-                         const first = allDebts[0];
-                         await dModel.update({ where: { id: first.id }, data: { remainingAmount: Math.max(0, first.remainingAmount + diff) } });
-                     } else {
-                         await dModel.create({ data: { userId: uId, title: "Debt Adjustment", category: "Loan", totalAmount: value, remainingAmount: value } });
-                     }
-                 }
-                 actionSuccess = true;
-                 actionMessage = `Total Debt overridden to ₹${value.toLocaleString("en-IN")}`;
-             } else if (metric === "savings" && p.goal) {
-                 const gModel = p.goal || p.Goal;
-                 const allGoals = await gModel.findMany({ where: { userId: uId } });
-                 const curSav = allGoals.reduce((s: number, g: any) => s + g.currentAmount, 0);
-                 const diff = value - curSav;
-                 if (diff !== 0) {
-                     if (allGoals.length > 0) {
-                         const first = allGoals[0];
-                         await gModel.update({ where: { id: first.id }, data: { currentAmount: Math.max(0, first.currentAmount + diff) } });
-                     } else {
-                         await gModel.create({ data: { userId: uId, title: "Savings Adjustment", targetAmount: value, currentAmount: value } });
-                     }
-                 }
-                 actionSuccess = true;
-                 actionMessage = `Savings Goals overridden to ₹${value.toLocaleString("en-IN")}`;
-             }
+            if (metric === "balance" && accountModel) {
+              const allAccounts = await accountModel.findMany({ where: { userId: uId } });
+              const currentTotal = allAccounts.reduce((s: number, a: any) => s + a.balance, 0);
+              const diff = value - currentTotal;
+              if (diff !== 0) {
+                let primary =
+                  allAccounts.find((a: any) => a.name.toLowerCase().includes("primary")) ||
+                  allAccounts[0];
+                if (primary) {
+                  await accountModel.update({
+                    where: { id: primary.id },
+                    data: { balance: primary.balance + diff },
+                  });
+                } else {
+                  await accountModel.create({
+                    data: { userId: uId, name: "Primary Balance", balance: value, type: "Bank" },
+                  });
+                }
+              }
+              actionSuccess = true;
+              actionMessage = `Total Balance overridden to ₹${value.toLocaleString("en-IN")}`;
+            } else if (metric === "income" && transactionModel) {
+              // The dashboard calculates income/spent over a 30-day window
+              const d = new Date();
+              d.setDate(d.getDate() - 30);
+              const allInc = await transactionModel.findMany({
+                where: { userId: uId, type: "income", date: { gte: d } },
+              });
+              const curInc = allInc.reduce((s: number, t: any) => s + t.amount, 0);
+              const diff = value - curInc;
+              if (diff !== 0) {
+                await transactionModel.create({
+                  data: {
+                    userId: uId,
+                    title: "Income Adjustment",
+                    amount: diff,
+                    type: "income",
+                    category: "Adjustment",
+                    date: new Date(),
+                  },
+                });
+              }
+              actionSuccess = true;
+              actionMessage = `Monthly Income overridden to ₹${value.toLocaleString("en-IN")}`;
+            } else if (metric === "spent" && transactionModel) {
+              // The dashboard calculates income/spent over a 30-day window
+              const d = new Date();
+              d.setDate(d.getDate() - 30);
+              const allExp = await transactionModel.findMany({
+                where: { userId: uId, type: "expense", date: { gte: d } },
+              });
+              const curExp = allExp.reduce((s: number, t: any) => s + t.amount, 0);
+              const diff = value - curExp;
+              if (diff !== 0) {
+                await transactionModel.create({
+                  data: {
+                    userId: uId,
+                    title: "Expense Adjustment",
+                    amount: diff,
+                    type: "expense",
+                    category: "Adjustment",
+                    date: new Date(),
+                  },
+                });
+              }
+              actionSuccess = true;
+              actionMessage = `Total Spent overridden to ₹${value.toLocaleString("en-IN")}`;
+            } else if (metric === "debt" && p.debt) {
+              const dModel = p.debt || p.Debt;
+              const allDebts = await dModel.findMany({ where: { userId: uId } });
+              const curDebt = allDebts.reduce((s: number, d: any) => s + d.remainingAmount, 0);
+              const diff = value - curDebt;
+              if (diff !== 0) {
+                if (allDebts.length > 0) {
+                  const first = allDebts[0];
+                  await dModel.update({
+                    where: { id: first.id },
+                    data: { remainingAmount: Math.max(0, first.remainingAmount + diff) },
+                  });
+                } else {
+                  await dModel.create({
+                    data: {
+                      userId: uId,
+                      title: "Debt Adjustment",
+                      category: "Loan",
+                      totalAmount: value,
+                      remainingAmount: value,
+                    },
+                  });
+                }
+              }
+              actionSuccess = true;
+              actionMessage = `Total Debt overridden to ₹${value.toLocaleString("en-IN")}`;
+            } else if (metric === "savings" && p.goal) {
+              const gModel = p.goal || p.Goal;
+              const allGoals = await gModel.findMany({ where: { userId: uId } });
+              const curSav = allGoals.reduce((s: number, g: any) => s + g.currentAmount, 0);
+              const diff = value - curSav;
+              if (diff !== 0) {
+                if (allGoals.length > 0) {
+                  const first = allGoals[0];
+                  await gModel.update({
+                    where: { id: first.id },
+                    data: { currentAmount: Math.max(0, first.currentAmount + diff) },
+                  });
+                } else {
+                  await gModel.create({
+                    data: {
+                      userId: uId,
+                      title: "Savings Adjustment",
+                      targetAmount: value,
+                      currentAmount: value,
+                    },
+                  });
+                }
+              }
+              actionSuccess = true;
+              actionMessage = `Savings Goals overridden to ₹${value.toLocaleString("en-IN")}`;
+            }
           }
           if (actionSuccess) {
             console.log(`[AI_ACTION_SUCCESS] ${actionMessage}`);
@@ -375,7 +442,7 @@ CRITICAL RULES:
 
           dataAction = parsed;
           const cleanResponse = responseText.replace(/info=\s*\{[\s\S]*?\}/, "").trim();
-          
+
           if (actionSuccess) {
             responseText = `✅ **${actionMessage}**\n\n${cleanResponse}`;
           } else {
@@ -388,11 +455,10 @@ CRITICAL RULES:
       }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       content: responseText,
-      action: dataAction 
+      action: dataAction,
     });
-
   } catch (error) {
     console.error("[CHAT_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -401,7 +467,8 @@ CRITICAL RULES:
 
 function getRuleBasedResponse(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("hello") || m.includes("hi")) return "Hello! I'm your financial assistant. How can I help you today?";
+  if (m.includes("hello") || m.includes("hi"))
+    return "Hello! I'm your financial assistant. How can I help you today?";
   if (m.includes("spent") || m.includes("buy") || m.includes("bought")) {
     return "I can help you log that. Please tell me the amount and category (e.g., 'I spent 500 on Food').";
   }

@@ -1,0 +1,55 @@
+@reference "../../app/globals.css";
+
+.section {
+  @apply py-24 bg-surface overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative;
+}
+
+.titleContainer {
+  @apply flex flex-col md:flex-row items-start md:items-center justify-between mb-20 gap-8;
+}
+
+.title {
+  @apply text-3xl md:text-5xl font-black text-text-primary tracking-tight max-w-lg leading-tight;
+}
+
+.description {
+  @apply text-base text-text-secondary font-medium max-w-sm;
+}
+
+.btnTrial {
+  @apply bg-brand text-white hover:opacity-90 px-6 py-2.5 rounded-full text-sm font-bold transition-all mt-4 inline-block;
+}
+
+.stepsGrid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative;
+}
+
+/* Optional connecting line for desktop */
+.stepsGrid::before {
+  content: "";
+  @apply hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-border z-0;
+}
+
+.stepCard {
+  @apply flex flex-col items-center text-center relative z-10;
+}
+
+.iconWrapper {
+  @apply w-24 h-24 rounded-full bg-brand/10 flex items-center justify-center mb-8 relative;
+}
+
+.iconInner {
+  @apply w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/30;
+}
+
+.stepTitle {
+  @apply text-xl font-black text-text-primary mb-3;
+}
+
+.stepDesc {
+  @apply text-sm text-text-secondary font-medium max-w-xs;
+}

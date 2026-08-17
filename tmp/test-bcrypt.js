@@ -6,7 +6,7 @@ async function test() {
   console.log("Hashed:", hashed);
   const isValid = await compare(password, hashed);
   console.log("Is Valid:", isValid);
-  
+
   // Test with another hash
   const otherHashed = await hash("123456", 10);
   console.log("Other Hashed:", otherHashed);

@@ -1,0 +1,62 @@
+@reference "../../app/globals.css";
+
+.featuresSection {
+  @apply py-24 bg-background-alt overflow-hidden;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.headerGrid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center mb-16;
+}
+
+.title {
+  @apply text-3xl md:text-5xl font-black text-text-primary tracking-tight leading-tight;
+}
+
+.subtitle {
+  @apply text-base text-text-secondary font-medium leading-relaxed max-w-lg;
+}
+
+.bentoGrid {
+  @apply grid grid-cols-1 md:grid-cols-12 gap-6;
+}
+
+.card {
+  @apply bg-surface border border-border rounded-3xl p-6 sm:p-8 flex flex-col hover:shadow-lg transition-all;
+}
+
+.cardTitle {
+  @apply text-xl font-black text-text-primary mb-2;
+}
+
+.cardDesc {
+  @apply text-sm text-text-secondary leading-relaxed mb-6;
+}
+
+.cardVisual {
+  @apply mt-auto w-full bg-background rounded-2xl border border-border overflow-hidden;
+}
+
+/* Specific Grid Item Placement */
+.item1 {
+  @apply md:col-span-4;
+}
+
+.item2 {
+  @apply md:col-span-4;
+}
+
+.item3 {
+  @apply md:col-span-4;
+}
+
+.item4 {
+  @apply md:col-span-4;
+}
+
+.item5 {
+  @apply md:col-span-8;
+}
